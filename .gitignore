@@ -1,0 +1,6 @@
+.vscode
+client/web1/node_modules
+client/web1/package-lock.json
+server/build/
+server/test/build/
+server/muduo/lib/
