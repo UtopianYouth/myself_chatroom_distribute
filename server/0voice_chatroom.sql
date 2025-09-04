@@ -1,0 +1,12 @@
+DROP DATABASE IF EXISTS `0voice_chatroom`;
+CREATE DATABASE IF NOT EXISTS 0voice_chatroom;
+USE 0voice_chatroom;
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(100) NOT NULL,
+  email VARCHAR(100) NOT NULL,
+  password TEXT NOT NULL,
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (username),
+  UNIQUE (email)
+);
