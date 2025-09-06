@@ -31,7 +31,7 @@ public:
     }
     ~HttpHandler() {
         LOG_INFO << "析构";
-        handler_.reset();
+        http_conn_.reset();
     }    
 
     void OnRead(Buffer* buf) {
@@ -40,21 +40,22 @@ public:
             int32_t len = buf->readableBytes();
             std::cout << "in_buf: " << in_buf << std::endl;
 
-             auto headers = parseHttpHeaders(in_buf, len);
+            auto headers = parseHttpHeaders(in_buf, len);
             if (isWebSocketRequest(headers)) {
                 // WebSocket 请求
                 request_type_ = WEBSOCKET;
-                handler_ = std::make_shared<CWebSocketConn>(tcp_conn_);
-                 handler_->setHeaders(headers);
+                http_conn_ = std::make_shared<CWebSocketConn>(tcp_conn_);
+                http_conn_->setHeaders(headers);
             } else {
                 // HTTP 请求
                 request_type_ = HTTP;
-                handler_ = std::make_shared<CHttpConn>(tcp_conn_);
-                 handler_->setHeaders(headers);
+                http_conn_ = std::make_shared<CHttpConn>(tcp_conn_);
+                http_conn_->setHeaders(headers);
             }
         }
         // 将数据交给具体的处理器
-        handler_->OnRead(buf);
+        if(http_conn_)
+            http_conn_->OnRead(buf);
      }
     
 private:
@@ -100,7 +101,7 @@ private:
         return false;
     }
     TcpConnectionPtr tcp_conn_;
-    CHttpConnPtr handler_; // 指向 CHttpConn 或 CWebSocketConn 的基类指针
+    CHttpConnPtr http_conn_; // 指向 CHttpConn 或 CWebSocketConn 的基类指针
     RequestType request_type_ = UNKNOWN;
 };
 using HttpHandlerPtr = std::shared_ptr<HttpHandler>;

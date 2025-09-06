@@ -5,7 +5,8 @@ import { FieldValues, Path, UseFormRegister } from "react-hook-form";
 
 const reducer = (prev: boolean) => !prev;
 
-const minLength = 10;
+//测试的时候 密码允许设置短一些
+const minLength = 4;
 
 export default function PasswordInput<TFieldValues extends FieldValues>({
   register,

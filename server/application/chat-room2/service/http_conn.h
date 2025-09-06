@@ -16,7 +16,8 @@
     "Connection:close\r\n"                                                     \
     "Content-Length:%d\r\n"                                                    \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
-// 86400单位是秒，86400换算后是24小时
+
+// 86400 Seconds = 24 Hours  
 #define HTTP_RESPONSE_WITH_COOKIE                                                    \
     "HTTP/1.1 %d %s\r\n"                                                      \
     "Connection:close\r\n"                                                     \
@@ -25,7 +26,7 @@
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
 
-#define HTTP_RESPONSE_HTM_MAX 4096
+#define HTTP_RESPONSE_HTML_MAX 4096
 #define HTTP_RESPONSE_HTML                                                    \
     "HTTP/1.1 200 OK\r\n"                                                      \
     "Connection:close\r\n"                                                     \
@@ -39,39 +40,35 @@
     "Content-Length:%d\r\n"                                                    \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
-    
+
 using namespace muduo;
 using namespace muduo::net;
 using namespace std;
-class CHttpConn :  public std::enable_shared_from_this<CHttpConn>
+class CHttpConn : public std::enable_shared_from_this<CHttpConn>
 {
 public:
     CHttpConn(TcpConnectionPtr tcp_conn);
-    virtual ~CHttpConn(); 
-    virtual void OnRead(Buffer *buf);
+    virtual ~CHttpConn();
+    virtual void OnRead(Buffer* buf);
     virtual std::string getSubdirectoryFromHttpRequest(const std::string& httpRequest);
-    virtual void setHeaders(std::unordered_map<std::string, std::string> &headers) {
+    virtual void setHeaders(std::unordered_map<std::string, std::string>& headers) {
         headers_ = headers;
     }
-    void send(const string &data);
+    void send(const string& data);
 protected:
     TcpConnectionPtr tcp_conn_;
     uint32_t uuid_ = 0;
-     CHttpParserWrapper http_parser_;
+    CHttpParserWrapper http_parser_;
     string url_;
     std::unordered_map<std::string, std::string> headers_;
 private:
- // 账号注册处理
-    int _HandleRegisterRequest(string &url, string &post_data);
+    // 账号注册处理
+    int _HandleRegisterRequest(string& url, string& post_data);
     // 账号登陆处理
-    int _HandleLoginRequest(string &url, string &post_data);
- 
+    int _HandleLoginRequest(string& url, string& post_data);
 
-    int _HandleHtml(string &url, string &post_data);
-    int _HandleMemHtml(string &url, string &post_data);
-    
-    int handle_create_account(string &url, string &post_data);
-    int handle_login(string &url, string &post_data);
+    int _HandleHtml(string& url, string& post_data);
+    int _HandleMemHtml(string& url, string& post_data);
 
 };
 

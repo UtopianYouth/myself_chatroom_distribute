@@ -1,12 +1,22 @@
 DROP DATABASE IF EXISTS `0voice_chatroom`;
-CREATE DATABASE IF NOT EXISTS 0voice_chatroom;
-USE 0voice_chatroom;
+
+DROP DATABASE IF EXISTS `myself_chatroom`;
+
+CREATE DATABASE IF NOT EXISTS myself_chatroom;
+
+USE myself_chatroom;
+
+DROP TABLE IF EXISTS users;
+
 CREATE TABLE IF NOT EXISTS users (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  username VARCHAR(100) NOT NULL,
-  email VARCHAR(100) NOT NULL,
-  password TEXT NOT NULL,
-  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (username),
-  UNIQUE (email)
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    password_hash CHAR(64) NOT NULL,
+    salt CHAR(32) NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE (username),
+    UNIQUE (email),
+    INDEX idx_email (email)
 );

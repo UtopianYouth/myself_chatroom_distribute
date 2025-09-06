@@ -5,6 +5,7 @@ import {
   LoginRequest,
   LoginResponse,
 } from "@/lib/apiTypes";
+import { MD5 } from "crypto-js";
 
 const sendRequest = ({
   body,
@@ -41,6 +42,8 @@ export async function login({
   email,
   password,
 }: LoginRequest): Promise<LoginResponse> {
+  // 增加对密码进行 MD5 加密
+  password = MD5(password).toString();
   // Compose and send the request
   const res = await sendRequest({
     method: "POST",
@@ -61,11 +64,14 @@ export async function createAccount({
   email,
   password,
 }: CreateAccountRequest): Promise<CreateAccountResponse> {
+  // 对密码进行 MD5 加密
+  password = MD5(password).toString();
+
   // Compose and send the request
   const res = await sendRequest({
     method: "POST",
     path: "create-account",
-    body: { username, email, password },
+    body: { username, email, password},
   });
 
   // Parse the response
