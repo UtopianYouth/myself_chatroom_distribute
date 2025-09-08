@@ -43,7 +43,7 @@ export async function login({
   password,
 }: LoginRequest): Promise<LoginResponse> {
   // 增加对密码进行 MD5 加密
-  password = MD5(password).toString();
+  //password = MD5(password).toString();
   // Compose and send the request
   const res = await sendRequest({
     method: "POST",
@@ -71,7 +71,7 @@ export async function createAccount({
   const res = await sendRequest({
     method: "POST",
     path: "create-account",
-    body: { username, email, password},
+    body: { username, email, password },
   });
 
   // Parse the response

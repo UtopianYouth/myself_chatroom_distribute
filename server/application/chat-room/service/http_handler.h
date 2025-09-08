@@ -25,18 +25,18 @@ public:
         WEBSOCKET // WebSocket 请求
     };
     HttpHandler(const TcpConnectionPtr& conn)
-        : tcp_conn_(conn) 
+        : tcp_conn_(conn)
     {
         LOG_INFO << "构造";
     }
     ~HttpHandler() {
-        LOG_INFO << "析构";
+        LOG_INFO << "析构, http_conn_.use_count(): " << http_conn_.use_count();
         http_conn_.reset();
-    }    
+    }
 
     void OnRead(Buffer* buf) {
-        if(request_type_ == UNKNOWN) {
-            const char *in_buf = buf->peek();
+        if (request_type_ == UNKNOWN) {
+            const char* in_buf = buf->peek();
             int32_t len = buf->readableBytes();
             std::cout << "in_buf: " << in_buf << std::endl;
 
@@ -46,7 +46,8 @@ public:
                 request_type_ = WEBSOCKET;
                 http_conn_ = std::make_shared<CWebSocketConn>(tcp_conn_);
                 http_conn_->setHeaders(headers);
-            } else {
+            }
+            else {
                 // HTTP 请求
                 request_type_ = HTTP;
                 http_conn_ = std::make_shared<CHttpConn>(tcp_conn_);
@@ -54,13 +55,13 @@ public:
             }
         }
         // 将数据交给具体的处理器
-        if(http_conn_)
+        if (http_conn_)
             http_conn_->OnRead(buf);
-     }
-    
+    }
+
 private:
 
-    std::unordered_map<std::string, std::string> parseHttpHeaders(const char *data, int size) {
+    std::unordered_map<std::string, std::string> parseHttpHeaders(const char* data, int size) {
         std::string request(data, size);
         return parseHttpHeaders(request);
     }
