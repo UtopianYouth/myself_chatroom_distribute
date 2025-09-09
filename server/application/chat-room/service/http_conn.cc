@@ -13,11 +13,11 @@ CHttpConn::CHttpConn(TcpConnectionPtr tcp_conn) :
     tcp_conn_(tcp_conn)
 {
     uuid_ = std::any_cast<uint32_t>(tcp_conn_->getContext());
-    LOG_INFO << "构造CHttpConn uuid: " << uuid_;
+    LOG_INFO << "Constructor CHttpConn uuid: " << uuid_;
 }
 
 CHttpConn::~CHttpConn() {
-    LOG_INFO << "析构CHttpConn uuid: " << uuid_;
+    LOG_INFO << "Destructor CHttpConn uuid: " << uuid_;
 }
 
 void CHttpConn::OnRead(Buffer* buf) // CHttpConn业务层面的OnRead

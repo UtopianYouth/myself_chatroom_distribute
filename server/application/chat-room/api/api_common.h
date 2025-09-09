@@ -1,14 +1,13 @@
 #ifndef __CHAT_ROOM_API_API_COMMON_H__
 #define __CHAT_ROOM_API_API_COMMON_H__
-
+#include<json/json.h>
+#include<memory>
+#include<vector>
+#include "db_pool.h"
+#include "cache_pool.h"
 #include "muduo/base/Logging.h"
 #include "muduo/base/md5.h"
 
-#include<json/json.h>
-#include<memory>
-
-#include "db_pool.h"
-#include "cache_pool.h"
 using std::string;
 
 // 加 class: 强类型，限制作用域
@@ -40,5 +39,8 @@ string RandomString(const int len);
 int ApiSetCookie(string email, string& cookie);
 
 string api_error_id_to_string(api_error_id input);
+
+int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int32_t& userid, string& email);
+int GetUserNameAndUseridByEmail(string& email, string& username, int32_t& userid);
 
 #endif

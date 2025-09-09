@@ -17,9 +17,7 @@ using namespace std;
 
 std::map<uint32_t, HttpHandlerPtr> s_http_handler_map;
 
-
-class HttpServer
-{
+class HttpServer {
 public:
     //构造函数 loop主线程的EventLoop， addr封装ip，port, name服务名字，num_event_loops多少个subReactor
     HttpServer(EventLoop* loop, const InetAddress& addr, const std::string& name, int num_event_loops
@@ -36,8 +34,9 @@ public:
         server_.setThreadNum(num_event_loops);
     }
     void start() {
-        if (num_threads_ != 0)
+        if (num_threads_ != 0) {
             thread_pool_.start(num_threads_);
+        }
         server_.start();
     }
 private:
@@ -81,9 +80,9 @@ private:
     }
 
 
-    TcpServer server_;    // 每个连接的回调数据 新的连接/断开连接  收到数据  发送数据完成   
-    EventLoop* loop_ = nullptr; //这个是主线程的EventLoop
-    std::atomic<uint32_t> conn_uuid_generator_ = 0;  //这里是用于http请求，不会一直保持链接
+    TcpServer server_;              // 每个连接的回调数据 新的连接/断开连接  收到数据  发送数据完成   
+    EventLoop* loop_ = nullptr;     //这个是主线程的EventLoop
+    std::atomic<uint32_t> conn_uuid_generator_ = 0;  //这里是用于http请求 不会一直保持链接
     std::mutex mtx_;
 
     //线程池
@@ -97,8 +96,8 @@ int main(int argc, char* argv[])
     std::cout << argv[0] << " [conf ] " << std::endl;
 
     // 默认情况下，往一个读端关闭的管道或socket连接中写数据将引发SIGPIPE信号。我们需要在代码中捕获并处理该信号，
-   // 或者至少忽略它，因为程序接收到SIGPIPE信号的默认行为是结束进程，而我们绝对不希望因为错误的写操作而导致程序退出。
-   // SIG_IGN 忽略信号的处理程序
+    // 或者至少忽略它，因为程序接收到SIGPIPE信号的默认行为是结束进程，而我们绝对不希望因为错误的写操作而导致程序退出。
+    // SIG_IGN 忽略信号的处理程序
     signal(SIGPIPE, SIG_IGN); //忽略SIGPIPE信号
     int ret = 0;
     char* str_chat_room_conf = NULL;
@@ -117,7 +116,13 @@ int main(int argc, char* argv[])
     Logger::LogLevel log_level = static_cast<Logger::LogLevel>(atoi(str_log_level));
     Logger::setLogLevel(log_level);
 
-
+    // 创建主题
+    PubSubService& pubSubService = PubSubService::GetInstance();
+    std::vector<Room>& room_list = GetRoomList();
+    for (const auto& room : room_list) {
+        // default: creater by user id
+        pubSubService.AddRoomTopic(room.room_id, room.room_name, 1);
+    }
 
     // 初始化mysql、redis连接池，内部也会读取读取配置文件 chat-room.conf
     CacheManager::SetConfPath(str_chat_room_conf); //设置配置文件路径

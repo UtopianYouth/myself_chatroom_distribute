@@ -77,3 +77,58 @@ string api_error_id_to_string(api_error_id input) {
         return "";
     }
 }
+
+/**
+ * query redis
+ */
+int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int32_t& userid, string& email) {
+    int ret = 0;
+    CacheManager* cache_manager = CacheManager::getInstance();
+    CacheConn* cache_conn = cache_manager->GetCacheConn("token");
+    AUTO_REL_CACHECONN(cache_manager, cache_conn);
+
+    if (cache_conn) {
+        email = cache_conn->Get(cookie);
+        LOG_INFO << "cookie: " << cookie << ", email: " << email;
+        if (email.empty()) {
+            return -1;
+        }
+        else {
+            return GetUserNameAndUseridByEmail(email, username, userid);
+        }
+    }
+    else {
+        return -1;
+    }
+}
+
+/**
+ * query mysql
+ */
+int GetUserNameAndUseridByEmail(string& email, string& username, int32_t& userid) {
+    int ret = 0;
+    CDBManager* db_manager = CDBManager::getInstance();
+    CDBConn* db_conn = db_manager->GetDBConn("chatroom_slave");
+    AUTO_REL_DBCONN(db_manager, db_conn);
+
+    // get user id and username
+    string strSql = FormatString("select id, username from users where email='%s'", email.c_str());
+    CResultSet* result_set = db_conn->ExecuteQuery(strSql.c_str());
+
+    if (result_set && result_set->Next()) {
+        username = result_set->GetString("username");
+        userid = result_set->GetInt("id");
+
+        LOG_INFO << "username: " << username;
+        ret = 0;
+    }
+    else {
+        ret = -1;
+    }
+
+    if (result_set) {
+        delete result_set;
+    }
+
+    return ret;
+}

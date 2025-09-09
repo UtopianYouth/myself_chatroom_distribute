@@ -27,10 +27,10 @@ public:
     HttpHandler(const TcpConnectionPtr& conn)
         : tcp_conn_(conn)
     {
-        LOG_INFO << "构造";
+        LOG_INFO << "Constructor HttpHandler";
     }
     ~HttpHandler() {
-        LOG_INFO << "析构, http_conn_.use_count(): " << http_conn_.use_count();
+        LOG_INFO << "Destructor http_conn_.use_count(): " << http_conn_.use_count();
         http_conn_.reset();
     }
 
