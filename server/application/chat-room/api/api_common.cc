@@ -81,7 +81,7 @@ string api_error_id_to_string(api_error_id input) {
 /**
  * query redis
  */
-int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int32_t& userid, string& email) {
+int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int64_t& userid, string& email) {
     int ret = 0;
     CacheManager* cache_manager = CacheManager::getInstance();
     CacheConn* cache_conn = cache_manager->GetCacheConn("token");
@@ -105,7 +105,7 @@ int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int32_t& us
 /**
  * query mysql
  */
-int GetUserNameAndUseridByEmail(string& email, string& username, int32_t& userid) {
+int GetUserNameAndUseridByEmail(string& email, string& username, int64_t& userid) {
     int ret = 0;
     CDBManager* db_manager = CDBManager::getInstance();
     CDBConn* db_conn = db_manager->GetDBConn("chatroom_slave");

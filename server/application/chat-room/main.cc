@@ -90,6 +90,18 @@ private:
     const int num_threads_ = 0;
 };
 
+int load_room_list() {
+    PubSubService& pubSubService = PubSubService::GetInstance();
+
+    std::vector<Room>& all_rooms = PubSubService::GetRoomList(); //获取缺省的聊天室列表
+    for (const auto& room : all_rooms) {
+        pubSubService.AddRoomTopic(room.room_id, room.room_name, 1);
+        LOG_INFO << "Added room to PubSubService: " << room.room_id << " - " << room.room_name;
+    }
+
+    return 0;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -116,13 +128,6 @@ int main(int argc, char* argv[])
     Logger::LogLevel log_level = static_cast<Logger::LogLevel>(atoi(str_log_level));
     Logger::setLogLevel(log_level);
 
-    // 创建主题
-    PubSubService& pubSubService = PubSubService::GetInstance();
-    std::vector<Room>& room_list = GetRoomList();
-    for (const auto& room : room_list) {
-        // default: creater by user id
-        pubSubService.AddRoomTopic(room.room_id, room.room_name, 1);
-    }
 
     // 初始化mysql、redis连接池，内部也会读取读取配置文件 chat-room.conf
     CacheManager::SetConfPath(str_chat_room_conf); //设置配置文件路径
@@ -138,6 +143,8 @@ int main(int argc, char* argv[])
         LOG_ERROR << "DBManager init failed";
         return -1;
     }
+
+    load_room_list();
 
     std::cout << "hello GitHub话题聊天室 ../../bin/chat-room\n";
 

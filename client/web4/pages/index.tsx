@@ -2,23 +2,26 @@ import Head from "@/components/Head";
 import styles from "@/styles/Home.module.css";
 import Header from "@/components/Header";
 import { Button, Link, FormHelperText } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import useLoading, { DontClearLoading } from "@/hooks/useLoading";
-import { login } from "@/lib/api";
+import { createAccount } from "@/lib/api";
 import { ErrorId } from "@/lib/apiTypes";
 import { useRouter } from "next/router";
 import EmailInput from "@/components/EmailInput";
 import PasswordInput from "@/components/PasswordInput";
+import UsernameInput from "@/components/UsernameInput";
+import { useCallback } from "react";
 import FormCard from "@/components/FormCard";
-import { hasAuth, setHasAuth } from "@/lib/hasAuth";
+import { setHasAuth } from "@/lib/hasAuth";
 
 type Inputs = {
+  username: string;
   email: string;
   password: string;
 };
 
-const LoginScreen = () => {
+// The home page
+export default function HomePage() {
   const router = useRouter();
 
   const {
@@ -29,20 +32,28 @@ const LoginScreen = () => {
   } = useForm<Inputs>({ mode: "onTouched" });
 
   const { loading, launch } = useLoading();
+
   const onSubmit: SubmitHandler<Inputs> = useCallback(
-    async (inputs) => {
-      await launch(async () => {
+    (inputs) => {
+      launch(async () => {
         try {
-          const { type } = await login(inputs);
+          const { type } = await createAccount(inputs);
           switch (type) {
             case "ok":
               setHasAuth();
               router.push("/chat");
               return DontClearLoading;
-            case ErrorId.LoginFailed:
-              setError("root", {
+            case ErrorId.EmailExists:
+              setError("email", {
                 type: "value",
-                message: "无效的用户名或密码.",
+                message: "This email address is already in use.",
+              });
+              break;
+            case ErrorId.UsernameExists:
+              setError("username", {
+                type: "value",
+                message:
+                  "This username is already in use. Please pick a different one.",
               });
               break;
           }
@@ -54,23 +65,27 @@ const LoginScreen = () => {
         }
       });
     },
-    [router, launch, setError],
+    [router, setError, launch],
   );
 
   return (
     <>
       <Head />
-
       <div className="flex flex-col">
         <Header />
-        <div
-          className={`${styles.bodycontainer} p-12 flex flex-col justify-center`}
-        >
+        <div className={`${styles.bodycontainer} p-12`}>
+          <div className="text-center pb-8">
+            <p className="text-3xl p-3 m-0">欢迎来到</p>
+            <p className="text-6xl p-3 m-0">💬 GitHub话题聊天室 💬</p>
+            <p className="text-xl p-3 m-0">
+              这是一个使用C++Linux写的聊天项目
+            </p>
+          </div>
           <div className="flex justify-center">
-            <FormCard title="登录 -> GitHub主题聊天室">
+            <FormCard title="想尝试一下吗?">
               <form
-                onSubmit={handleSubmit(onSubmit)}
                 className="flex-1 flex flex-col"
+                onSubmit={handleSubmit(onSubmit)}
               >
                 <EmailInput
                   register={register}
@@ -82,20 +97,26 @@ const LoginScreen = () => {
                   register={register}
                   name="password"
                   errorMessage={errors?.password?.message}
-                  className="flex-1 pb-2 "
+                  className="flex-1 pb-2"
+                />
+                <UsernameInput
+                  register={register}
+                  name="username"
+                  errorMessage={errors?.username?.message}
+                  className="flex-1 pb-2"
                 />
                 {errors.root && (
                   <FormHelperText error>{errors.root.message}</FormHelperText>
                 )}
                 <div className="pt-8 flex justify-center">
                   <Button variant="contained" type="submit" disabled={loading}>
-                    {loading ? "Logging in..." : "Log me in!"}
+                    {loading ? "创建账号中..." : "创建账号"}
                   </Button>
                 </div>
                 <div className="pt-8 flex justify-center">
                   <p className="p-0 m-0 text-sm">
-                    你还没有账号? 去{" "}
-                    <Link href="/">创建账号</Link>
+                    你已经有账号了？ 去{" "}
+                    <Link href="/login">登录</Link>
                   </p>
                 </div>
               </form>
@@ -105,22 +126,4 @@ const LoginScreen = () => {
       </div>
     </>
   );
-};
-
-export default function LoginPage() {
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (hasAuth()) {
-      router.replace("/chat");
-    } else {
-      setLoading(false);
-    }
-  }, [router, setLoading]);
-
-  if (loading) return <></>;
-
-  return <LoginScreen />;
 }

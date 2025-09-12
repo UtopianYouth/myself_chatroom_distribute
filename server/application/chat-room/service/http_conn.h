@@ -5,47 +5,46 @@
 #include "muduo/net/Buffer.h"
 
 #define HTTP_RESPONSE_JSON_MAX 4096
+
 #define HTTP_RESPONSE_JSON                                                     \
     "HTTP/1.1 200 OK\r\n"                                                      \
     "Connection:close\r\n"                                                     \
     "Content-Length:%d\r\n"                                                    \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
-#define HTTP_RESPONSE_WITH_CODE                                                     \
+#define HTTP_RESPONSE_WITH_CODE                                               \
     "HTTP/1.1 %d %s\r\n"                                                      \
-    "Connection:close\r\n"                                                     \
-    "Content-Length:%d\r\n"                                                    \
+    "Connection:close\r\n"                                                    \
+    "Content-Length:%d\r\n"                                                   \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
 // 86400 Seconds = 24 Hours  
-#define HTTP_RESPONSE_WITH_COOKIE                                                    \
-    "HTTP/1.1 %d %s\r\n"                                                      \
+#define HTTP_RESPONSE_WITH_COOKIE                                              \
+    "HTTP/1.1 %d %s\r\n"                                                       \
     "Connection:close\r\n"                                                     \
-    "set-cookie: sid=%s; HttpOnly; Max-Age=86400; SameSite=Strict\r\n" \
+    "set-cookie: sid=%s; HttpOnly; Max-Age=86400; SameSite=Strict\r\n"         \
     "Content-Length:%d\r\n"                                                    \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
-
 #define HTTP_RESPONSE_HTML_MAX 4096
-#define HTTP_RESPONSE_HTML                                                    \
+#define HTTP_RESPONSE_HTML                                                     \
     "HTTP/1.1 200 OK\r\n"                                                      \
     "Connection:close\r\n"                                                     \
     "Content-Length:%d\r\n"                                                    \
     "Content-Type:text/html;charset=utf-8\r\n\r\n%s"
 
-
-#define HTTP_RESPONSE_BAD_REQ                                                     \
-    "HTTP/1.1 400 Bad\r\n"                                                      \
+#define HTTP_RESPONSE_BAD_REQ                                                  \
+    "HTTP/1.1 400 Bad\r\n"                                                     \
     "Connection:close\r\n"                                                     \
     "Content-Length:%d\r\n"                                                    \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
-
 using namespace muduo;
 using namespace muduo::net;
 using namespace std;
-class CHttpConn : public std::enable_shared_from_this<CHttpConn>
-{
+
+// enable_shared_from_this ==> ensure one CHttpConn <==> one shared_ptr<T>
+class CHttpConn : public std::enable_shared_from_this<CHttpConn> {
 public:
     CHttpConn(TcpConnectionPtr tcp_conn);
     virtual ~CHttpConn();
@@ -68,6 +67,7 @@ private:
     int _HandleLoginRequest(string& url, string& post_data);
 
     int _HandleHtml(string& url, string& post_data);
+
     int _HandleMemHtml(string& url, string& post_data);
 
 };

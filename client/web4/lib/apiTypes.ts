@@ -68,7 +68,24 @@ export type ServerMessagesEvent = {
   };
 };
 
-export type AnyServerEvent = HelloEvent | ServerMessagesEvent;
+export type ServerCreateRoomEvent = {
+  type: "serverCreateRoom";
+  payload: {
+    roomId: string;
+    roomName: string;
+  };
+};
+
+export type ServerRoomHistoryEvent = {
+  type: "serverRoomHistory";
+  payload: {
+    roomId: string;
+    messages: ServerMessage[];
+    hasMoreMessages: boolean;
+  };
+};
+
+export type AnyServerEvent = HelloEvent | ServerMessagesEvent | ServerCreateRoomEvent | ServerRoomHistoryEvent;
 
 export type ClientMessagesEvent = {
   type: "clientMessages";

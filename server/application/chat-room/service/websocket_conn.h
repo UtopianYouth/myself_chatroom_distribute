@@ -10,21 +10,23 @@
 class CWebSocketConn : public CHttpConn {
 public:
     CWebSocketConn(const TcpConnectionPtr& conn);
-    virtual void OnRead(Buffer* buf);
     virtual ~CWebSocketConn();
-private:
-    void SendCloseFrame(uint16_t code, const std::string& reason);
-    void SendPongFrame();       // Pong frame
+    virtual void OnRead(Buffer* buf);
     void Disconnect();
+
+private:
+    int64_t user_id = -1;       // userid
+    string username;           // username
+    std::unordered_map<string, Room> rooms_map;    // had joined the chatrooms
+
+    void SendCloseFrame(uint16_t code, const string& reason);
+    void SendPongFrame();       // Pong frame
     bool IsCloseFrame(const std::string& frame);
 
-    void SendHelloMessage();
-    void HandleClientMessage(Json::Value& root);
-
+    int SendHelloMessage();
+    int HandleClientMessages(Json::Value& root);
+    int HandleRequestRoomHistory(Json::Value& root);
     bool handshake_completed = false;   // the websocket conn of client with server 
-    string username;           // username
-    int32_t userid = -1;       // userid
-    std::unordered_map<string, Room> rooms_map;    //   join the chat-rooms 
 };
 
 using CWebSocketConnPtr = std::shared_ptr<CWebSocketConn>;

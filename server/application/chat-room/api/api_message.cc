@@ -1,27 +1,31 @@
 #include "api_message.h"
 
-int ApiGetRoomHistory(Room& room, MessageBatch& message_batch) {
+int ApiGetRoomHistory(Room& room, MessageBatch& message_batch, const int msg_count) {
     CacheManager* cache_manager = CacheManager::getInstance();
     CacheConn* cache_conn = cache_manager->GetCacheConn("msg");
     AUTO_REL_CACHECONN(cache_manager, cache_conn);
 
-    string stream_ref = "+";
+    std::string stream_ref = "+";       // hello message ==> get history message firstly
     if (!room.history_last_message_id.empty()) {
         stream_ref = "(" + room.history_last_message_id;
     }
-    LOG_INFO << "stream_ref: " << stream_ref;
-    std::vector<pair<string, string>> msgs;
+    LOG_INFO << "stream_ref: " << stream_ref << ", msg_count:" << msg_count << ", room_id:" << room.room_id;
+
+    std::vector<std::pair<string, string>> msgs;
+    bool res = cache_conn->GetXrevrange(room.room_id, stream_ref, "-", msg_count, msgs);
 
     // get data from redis
-    if (cache_conn->GetXrevrange(room.room_id, stream_ref, "-", message_batch_size, msgs)) {
+    if (res) {
         for (int i = 0;i < msgs.size();++i) {
+            // the first message has been display
             LOG_INFO << "key: " << msgs[i].first << ", value: " << msgs[i].second;
             Message msg;
-            msg.id = msgs[i].first;     // message id
+            msg.id = msgs[i].first;                     // message id
             room.history_last_message_id = msg.id;      // last message id
             bool res;
             Json::Value root;
             Json::Reader jsonReader;
+            LOG_INFO << "msg: " << msgs[i].second;
             res = jsonReader.parse(msgs[i].second, root);
             if (!res) {
                 LOG_ERROR << "parse redis msg failed";
@@ -40,19 +44,28 @@ int ApiGetRoomHistory(Room& room, MessageBatch& message_batch) {
             }
             msg.user_id = root["user_id"].asInt64();
 
+            if (root["username"].isNull()) {
+                LOG_ERROR << "username null";
+                return -1;
+            }
+            msg.username = root["username"].asString();
+
             if (root["timestamp"].isNull()) {
                 LOG_ERROR << "timestamp null";
                 return -1;
             }
             msg.timestamp = root["timestamp"].asInt64();
+
             message_batch.messages.push_back(msg);
         }
 
-        if (msgs.size() < message_batch_size) {
+        LOG_INFO << "room_id: " << room.room_id << " , msgs.size() = " << msgs.size();
+
+        if (msgs.size() < msg_count) {
             message_batch.has_more = false;     // redis haven't more data can be read
         }
         else {
-            message_batch.has_more = true;
+            message_batch.has_more = true;      // after this get message batch from redis, has more message in redis 
         }
 
         return 0;
@@ -62,36 +75,16 @@ int ApiGetRoomHistory(Room& room, MessageBatch& message_batch) {
     }
 }
 
-// Message to json
-string SerializeMessageToJson(const std::vector<Message>& msgs) {
-    Json::Value root;
-    Json::StreamWriterBuilder writer;
-
-    for (const auto& msg : msgs) {
-        Json::Value msgNode;
-        msgNode["id"] = msg.id;
-        msgNode["content"] = msg.content;
-        msgNode["timestamp"] = (Json::UInt64)msg.timestamp;
-        msgNode["user_id"] = (Json::Int64)msg.user_id;
-
-        root.append(msgNode);
-    }
-
-    // json tree converts string
-    return Json::writeString(writer, root);
-}
-
 string SerializeMessageToJson(const Message& msg) {
     Json::Value root;
-    Json::StreamWriterBuilder writer;
-    writer.settings_["indentation"] = "";   // forbid '\n' and '\r'
-
     root["content"] = msg.content;
-    root["timestamp"] = (Json::Int64)msg.timestamp;
-    root["user_id"] = (Json::Int64)msg.user_id;
+    root["timestamp"] = (Json::UInt64)msg.timestamp;
+    root["user_id"] = (Json::UInt64)msg.user_id;
+    root["username"] = msg.username;
+    Json::FastWriter writer;
 
-    // json tree converts string
-    return Json::writeString(writer, root);
+    return writer.write(root);
+    //return root.toStyledString();
 }
 
 // store data into redis
@@ -103,18 +96,17 @@ int ApiStoreMessage(string room_id, std::vector<Message>& msgs) {
     for (int i = 0;i < msgs.size();++i) {
         string json_msg = SerializeMessageToJson(msgs[i]);
         std::vector<pair<string, string>> field_value_pairs;
-        LOG_INFO << "payload: " << json_msg;
         field_value_pairs.push_back({ "payload", json_msg });
+        LOG_INFO << "payload: " << json_msg;
         string id = "*";
         bool  ret = cache_conn->Xadd(room_id, id, field_value_pairs);
         if (!ret) {
-            LOG_ERROR << "ApiStoreMessage room_id: " << room_id << " failed";
+            LOG_ERROR << "Xadd failed";
             return -1;
         }
-        LOG_INFO << "msgs id: " << id;
+        LOG_INFO << "room_id:" << room_id << ", msg.id:" << id << ", json_msg:" << json_msg;
         msgs[i].id = id;
     }
-
     return 0;
 }
 

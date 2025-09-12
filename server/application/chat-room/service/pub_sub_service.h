@@ -5,103 +5,101 @@
 #include<mutex>
 #include<vector>
 #include<functional>
+#include<memory>
 #include"api_types.h"
 
-// The theme and topic of room
+// Room manager
 class RoomTopic {
-public:
+private:
     string room_id;
     string room_topic;
-    int32_t owner_user_id;
-    std::unordered_set<int32_t> user_ids;
-    RoomTopic(string room_id, string room_topic, int32_t owner_user_id);
-    void AddSubscriber(int32_t user_id);
-    void DeleteSubscriber(int32_t user_id);
-    std::unordered_set<int32_t>& getSubscribers();
+    int64_t creator_id;
+    std::unordered_set<int64_t> user_ids;
+public:
+    RoomTopic(string room_id, string room_topic, int64_t creator_id);
+    ~RoomTopic();
+    void AddSubscriber(int64_t user_id);
+    void DeleteSubscriber(int64_t user_id);
+    std::unordered_set<int64_t>& GetSubscribers();
 };
+
 using RoomTopicPtr = std::shared_ptr<RoomTopic>;
 
 // callback: based on function
-using PubSubCallback = std::function<void(std::unordered_set<int32_t>&)>;
+using PubSubCallback = std::function<void(std::unordered_set<int64_t>&)>;
 
-// This is an interface to reduce compile times
 class PubSubService {
+private:
+    std::mutex room_topic_map_mutex;
+    std::unordered_map<string, RoomTopicPtr> room_topic_map;
 public:
-    std::mutex mtx;
-    std::unordered_map<string, RoomTopicPtr> room_topic_ids;
-
-    // static func: get single instance
+    // single mode 
     static PubSubService& GetInstance() {
         // local static func is thread secure for cpp11
         static PubSubService instance;
         return instance;
     }
 
-    virtual ~PubSubService() {}
+    PubSubService() {}
+    ~PubSubService() {}
 
     // create room topic
-    bool AddRoomTopic(string room_id, string room_topic, int32_t owner_user_id) {
-        RoomTopicPtr room_topic_ptr = std::make_shared<RoomTopic>(room_id,
-            room_topic, owner_user_id);
-        std::lock_guard<std::mutex> lock(mtx);
+    bool AddRoomTopic(const string& room_id, const string& room_topic, int64_t creator_id) {
+        std::lock_guard<std::mutex> lock(this->room_topic_map_mutex);
 
         // the room topic is exists?
+        if (this->room_topic_map.find(room_id) != this->room_topic_map.end()) {
+            return false;
+        }
 
-        room_topic_ids.insert({ room_id, room_topic_ptr }); // key: room_id
+        auto room_topic_ptr = std::make_shared<RoomTopic>(room_id, room_topic, creator_id);
+        room_topic_map[room_id] = room_topic_ptr;
         return true;
     }
 
-    // delete room topic ==> the owner or administor can do
-    bool DeleteRoomTopic(string room_id, int32_t owner_user_id) {
-        std::lock_guard<std::mutex> lock(mtx);
-        room_topic_ids.erase(room_id);
-        return true;
+    // delete room topic ==> the creator or administor can do
+    void DeleteRoomTopic(const string& room_id) {
+        std::lock_guard<std::mutex> lock(this->room_topic_map_mutex);
+
+        if (this->room_topic_map.find(room_id) != this->room_topic_map.end()) {
+            return;
+        }
+
+        this->room_topic_map.erase(room_id);
     }
 
     // add user to room topic
-    bool AddSubscriber(string room_id, int32_t user_id) {
-        std::lock_guard<std::mutex> lock(mtx);
-        RoomTopicPtr& room_topic_ptr = room_topic_ids[room_id];
-        if (room_topic_ptr) {
-            room_topic_ptr->AddSubscriber(user_id);
-            return true;
-        }
-        else {
+    bool AddSubscriber(const string& room_id, int64_t user_id) {
+        std::lock_guard<std::mutex> lock(this->room_topic_map_mutex);
+        if (this->room_topic_map.find(room_id) == this->room_topic_map.end()) {
             return false;
         }
+
+        this->room_topic_map[room_id]->AddSubscriber(user_id);
     }
 
     // delete user from room topic 
-    bool DeleteSubscriber(string room_id, int32_t user_id) {
-        std::lock_guard<std::mutex> lock(mtx);
-        RoomTopicPtr& room_topic_ptr = room_topic_ids[room_id];
-        if (room_topic_ptr) {
-            room_topic_ptr->DeleteSubscriber(user_id);
-            return true;
+    void DeleteSubscriber(const string& room_id, int64_t user_id) {
+        std::lock_guard<std::mutex> lock(this->room_topic_map_mutex);
+        if (this->room_topic_map.find(room_id) == this->room_topic_map.end()) {
+            return;
         }
-        else {
-            return false;
-        }
+        this->room_topic_map[room_id]->DeleteSubscriber(user_id);
     }
 
-    // send message to all user in room topic 
-    bool PubSubPublish(string room_id, PubSubCallback callback) {
-        mtx.lock();
-
-        RoomTopicPtr& room_topic_ptr = room_topic_ids[room_id];
-        if (room_topic_ptr) {
-            std::unordered_set<int32_t> user_ids = room_topic_ptr->getSubscribers();
-            mtx.unlock();
-            callback(user_ids);
-            return true;
+    // send message to all user in room topic
+    void PubSubMessage(const string& room_id, PubSubCallback callback) {
+        std::unordered_set<int64_t> user_ids;
+        {
+            std::lock_guard<std::mutex> lock(this->room_topic_map_mutex);
+            if (this->room_topic_map.find(room_id) == this->room_topic_map.end()) {
+                return;
+            }
+            user_ids = this->room_topic_map[room_id]->GetSubscribers();
         }
-        else {
-            mtx.unlock();
-            return false;
-        }
+        callback(user_ids);
     }
+    static std::vector<Room>& GetRoomList();
 };
-
-std::vector<Room>& GetRoomList();
 
 #endif

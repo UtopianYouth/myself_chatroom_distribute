@@ -24,13 +24,11 @@ public:
         HTTP,     // HTTP 请求
         WEBSOCKET // WebSocket 请求
     };
-    HttpHandler(const TcpConnectionPtr& conn)
-        : tcp_conn_(conn)
-    {
+    HttpHandler(const TcpConnectionPtr& conn) : tcp_conn_(conn) {
         LOG_INFO << "Constructor HttpHandler";
     }
     ~HttpHandler() {
-        LOG_INFO << "Destructor http_conn_.use_count(): " << http_conn_.use_count();
+        LOG_INFO << "Destructor HttpHandler, http_conn_.use_count(): " << http_conn_.use_count();
         http_conn_.reset();
     }
 
@@ -55,16 +53,18 @@ public:
             }
         }
         // 将数据交给具体的处理器
-        if (http_conn_)
+        if (http_conn_) {
             http_conn_->OnRead(buf);
+        }
     }
 
 private:
-
+    // 解析 HTTP 请求头
     std::unordered_map<std::string, std::string> parseHttpHeaders(const char* data, int size) {
         std::string request(data, size);
         return parseHttpHeaders(request);
     }
+
     // 解析 HTTP 请求头
     std::unordered_map<std::string, std::string> parseHttpHeaders(const std::string& request) {
         std::unordered_map<std::string, std::string> headers;
@@ -101,10 +101,12 @@ private:
 
         return false;
     }
+
     TcpConnectionPtr tcp_conn_;
-    CHttpConnPtr http_conn_; // 指向 CHttpConn 或 CWebSocketConn 的基类指针
+    CHttpConnPtr http_conn_; // 指向CHttpConn或CWebSocketConn的基类指针
     RequestType request_type_ = UNKNOWN;
 };
+
 using HttpHandlerPtr = std::shared_ptr<HttpHandler>;
 
 #endif

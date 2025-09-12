@@ -36,7 +36,7 @@ export default function RoomEntry({
           <p className="m-0 font-bold pb-2" data-testid="room-name">
             {name}
           </p>
-          <p className="m-0 overflow-hidden text-ellipsis whitespace-nowrap">
+          <p className="m-0 overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px] text-gray-600 text-sm">
             {lastMessage}
           </p>
         </div>

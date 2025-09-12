@@ -40,7 +40,7 @@ describe("CreateAccountPage page", () => {
     await user.type(screen.getByLabelText("email"), email);
     await user.type(screen.getByLabelText("password"), password);
     await user.type(screen.getByLabelText("username"), username);
-    await user.click(screen.getByText("Create my account"));
+    await user.click(screen.getByText("创建账号"));
 
     // We sent the data to the server
     expect(mockedApi.createAccount).toBeCalledTimes(1);
@@ -76,7 +76,7 @@ describe("CreateAccountPage page", () => {
     await user.type(screen.getByLabelText("email"), email);
     await user.type(screen.getByLabelText("password"), password);
     await user.type(screen.getByLabelText("username"), username);
-    await user.click(screen.getByText("Create my account"));
+    await user.click(screen.getByText("创建账号"));
 
     // We sent the data to the server
     expect(mockedApi.createAccount).toBeCalledTimes(1);

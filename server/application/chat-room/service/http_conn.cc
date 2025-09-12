@@ -57,7 +57,7 @@ void CHttpConn::OnRead(Buffer* buf) // CHttpConn业务层面的OnRead
 }
 
 void CHttpConn::send(const string& data) {
-    LOG_INFO << "send: " << data;
+    LOG_INFO << "send:" << data;
     tcp_conn_->send(data.c_str(), data.size());
 }
 /**

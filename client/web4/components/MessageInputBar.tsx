@@ -11,10 +11,15 @@ export default function MessageInputBar({
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
       // Focus the input when the user presses any key, to make interaction smoother
-      inputRef.current.focus();
+      // inputRef.current.focus();
+      // Darren修改，只有当inputRef.current是当前活动元素时，才执行focus()方法
+      if (document.activeElement == inputRef.current) {
+        inputRef.current.focus();
+      }
 
       // Invoke the passed callback when Entr is hit, then clear the message
-      if (event.key === "Enter") {
+      // if (event.key === "Enter") {
+        if (event.key === "Enter" && document.activeElement === inputRef.current) {
         const messageContent = inputRef.current?.value;
         if (messageContent) {
           onMessage(messageContent);

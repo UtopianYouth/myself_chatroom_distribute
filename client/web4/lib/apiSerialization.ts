@@ -24,3 +24,11 @@ export function serializeMessagesEvent(
   };
   return JSON.stringify(evt);
 }
+
+// 添加新的序列化函数
+export function serializeCreateRoomEvent(roomName: string): string {
+  return JSON.stringify({
+    type: "clientCreateRoom",
+    payload: { roomName },
+  });
+}
