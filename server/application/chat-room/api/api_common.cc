@@ -6,7 +6,7 @@
  *
  * @return: the unique uuid based on time and mac
  */
-string generateUUID() {
+string GenerateUUID() {
     uuid_t uuid;
     // thread safe: generate binary format uuid
     uuid_generate_time_safe(uuid);
@@ -39,7 +39,7 @@ string RandomString(const int len) {
 }
 
 /**
- *
+ *  set cookie for login user and store in redis==> (key, values) = (cookie, email)
  */
 int ApiSetCookie(string email, string& cookie) {
     // get redis connection pool
@@ -52,7 +52,7 @@ int ApiSetCookie(string email, string& cookie) {
         return -1;
     }
 
-    cookie = generateUUID(); // unique ==> the key of redis
+    cookie = GenerateUUID(); // unique ==> the key of redis
 
     // key:cookie value:email
     string ret = cache_conn->SetEx(cookie, 86400, email);

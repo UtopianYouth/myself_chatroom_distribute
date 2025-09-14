@@ -40,3 +40,19 @@ std::vector<Room>& PubSubService::GetRoomList() {
     std::lock_guard<std::mutex> lock(s_mutex_room_list);
     return s_room_list;
 }
+
+int PubSubService::AddRoom(const Room& room) {
+    std::lock_guard<std::mutex> lock(s_mutex_room_list);
+
+    // check if room exists
+    for (const auto& r : s_room_list) {
+        if (r.room_id == room.room_id) {
+            LOG_WARN << "room_id " << r.room_id << " already exists";
+            return -1;
+        }
+    }
+    s_room_list.push_back(room);
+    return 0;
+}
+
+

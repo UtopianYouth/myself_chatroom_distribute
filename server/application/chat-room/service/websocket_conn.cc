@@ -3,7 +3,9 @@
 #include "api_message.h"
 #include "pub_sub_service.h"
 #include "websocket_conn.h"
+#include "api_room.h"
 #include "base64.h"
+
 
 typedef struct WebSocketFrame {
     bool fin;
@@ -168,7 +170,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             size_t key_end = request.find("\r\n", key_start);
             std::string key = request.substr(key_start, key_end - key_start);
 
-            LOG_DEBUG << "key: " << key;
+            LOG_INFO << "key: " << key;
 
             // generate handshake response
             std::string response = GenerateWebSocketHandshakeResponse(key);
@@ -176,11 +178,11 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             // send http response
             this->send(response);
             this->handshake_completed = true;
-            LOG_DEBUG << "WebSocket handshake completed";
+            LOG_INFO << "WebSocket handshake completed";
 
             // verify cookie
             string Cookie = this->headers_["Cookie"];
-            LOG_DEBUG << "Cookie: " << Cookie;
+            LOG_INFO << "Cookie: " << Cookie;
 
             string sid;
             string email;
@@ -188,7 +190,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             if (!Cookie.empty()) {
                 sid = ExtractSid(Cookie);      // get cookie data
             }
-            LOG_DEBUG << "sid:" << sid;
+            LOG_INFO << "sid: " << sid;
             int ret = ApiGetUsernameAndUseridByCookie(sid, this->username, this->user_id, email);
             if (Cookie.empty() || ret < 0) {
                 string reason;
@@ -248,7 +250,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             Json::Reader jsonReader;
             res = jsonReader.parse(frame.payload_data, root);
             if (!res) {
-                LOG_ERROR << "parse websocket message json failed";
+                LOG_WARN << "parse websocket message json failed";
                 this->Disconnect();
                 return;
             }
@@ -256,17 +258,31 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             // get type field
             string  type;
             if (root["type"].isNull()) {
-                LOG_ERROR << "type null";
+                LOG_WARN << "type null";
                 this->Disconnect();
                 return;
             }
             type = root["type"].asString();
 
+            int ret;
+
             if (type == "clientMessages") {
-                this->HandleClientMessages(root);
+                ret = this->HandleClientMessages(root);
+                if (ret < 0) {
+                    LOG_WARN << "HandleClientMessages failed";
+                }
             }
             else if (type == "requestRoomHistory") {
-                this->HandleRequestRoomHistory(root);
+                ret = this->HandleRequestRoomHistory(root);
+                if (ret < 0) {
+                    LOG_WARN << "HandleRequestRoomHistory failed";
+                }
+            }
+            else if (type == "clientCreateRoom") {
+                ret = this->HandleClientCreateRoom(root);
+                if (ret < 0) {
+                    LOG_WARN << "HandleClientCreateRoom failed";
+                }
             }
             else {
                 LOG_ERROR << "unknown type: " << type;
@@ -406,7 +422,11 @@ int CWebSocketConn::HandleClientMessages(Json::Value& root) {
     }
 
     // store to redis
-    ApiStoreMessage(room_id, msgs);
+    int ret = ApiStoreMessage(room_id, msgs);
+    if (ret < 0) {
+        LOG_ERROR << "ApiStoreMessage() failed";
+        return -1;
+    }
 
     // json encode
     root = Json::Value();
@@ -461,6 +481,8 @@ int CWebSocketConn::HandleClientMessages(Json::Value& root) {
         };
 
     PubSubService::GetInstance().PubSubMessage(room_id, callback);
+
+    return 0;
 }
 
 void CWebSocketConn::SendPongFrame() {
@@ -470,16 +492,6 @@ void CWebSocketConn::SendPongFrame() {
     // 0x8A: Pong frame
     char frame[2] = { 0x8A, 0x00 };
     tcp_conn_->send(frame, sizeof(frame));
-}
-
-bool CWebSocketConn::IsCloseFrame(const string& frame) {
-    if (frame.empty()) {
-        return false;
-    }
-    uint8_t opcode = static_cast<uint8_t>(frame[0]) & 0x0F;
-
-    // 0x8 is close frame 
-    return opcode == 0x8;
 }
 
 int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
@@ -495,12 +507,12 @@ int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
 
     int ret = ApiGetRoomHistory(room, message_batch);
     if (ret < 0) {
-        LOG_ERROR << "ApiGetRoomHistory failed";
+        LOG_ERROR << "ApiGetRoomHistory() failed";
         return -1;
     }
 
-    //封装消息
-    root = Json::Value(); //重新置空
+    // encapsulate json
+    root = Json::Value();   // clear
     Json::Value payload;
 
     root["type"] = "serverRoomHistory";
@@ -526,7 +538,7 @@ int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
         payload["messages"] = messages;
     }
     else {
-        // front-end whill error if payload["meassages"] is nullptr, payload["messages"] = []
+        // front-end will error if payload["meassages"] is nullptr, payload["messages"] = []
         payload["messages"] = Json::arrayValue;
     }
 
@@ -534,8 +546,96 @@ int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
     Json::FastWriter writer;
     string str_json = writer.write(root);
     string response = BuildWebSocketFrame(str_json);
+
     send(response);
+
     return 0;
+}
+
+// request format: {"type":"clientCreateRoom","payload":{"roomName":"dpdk"}} 
+// response format: {"type":"serverCreateRoom","payload":{"roomId":"3bb1b0b6-e91c-11ef-ba07-bd8c0260908d", "roomName":"dpdk"}}
+int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
+    string room_id;
+    string room_name;
+    Json::Value payload = root["payload"];
+    if (payload.isNull()) {
+        LOG_WARN << "payload is null";
+        return -1;
+    }
+    if (payload["roomName"].isNull()) {
+        LOG_WARN << "roomName is null";
+        return -1;
+    }
+    room_name = payload["roomName"].asString();
+
+    // generate room_id
+    room_id = GenerateUUID();
+    LOG_INFO << "HandleClientCreateRoom(), room_id:" << room_id << ", room_name:" << room_name;
+
+    // create chatroom and store database
+    string err_msg;
+    bool ret = ApiCreateRoom(room_id, room_name, this->user_id, err_msg);
+    if (!ret) {
+        LOG_ERROR << "ApiCreateRoom failed, err_msg:" << err_msg;
+        return -1;
+    }
+    PubSubService::GetInstance().AddRoomTopic(room_id, room_name, this->user_id);
+
+    // new chatroom add to s_room_list
+    Room room;
+    room.room_id = room_id;
+    room.room_name = room_name;
+    room.creator_id = this->user_id;
+    room.create_time = getCurrentTimestamp();
+    PubSubService::GetInstance().AddRoom(room);
+
+    // everyone who logined subscribes this room, front_end will receive this response and subscribe this room
+    this->rooms_map[room_id] = room;
+    {
+        std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
+        for (auto it = s_user_ws_conn_map.begin(); it != s_user_ws_conn_map.end(); it++) {
+            LOG_INFO << "AddSubscriber(), room_id: " << room_id << ", user_id:" << it->first;
+            PubSubService::GetInstance().AddSubscriber(room_id, it->first);
+        }
+    }
+
+    // broadcast to everyone that server create a new room
+    root = Json::Value();
+    payload = Json::Value();
+    root["type"] = "serverCreateRoom";
+    payload["roomId"] = room_id;
+    payload["roomName"] = room_name;
+    root["payload"] = payload;
+
+    // json to string
+    Json::FastWriter writer;
+    string str_json = writer.write(root);
+
+    LOG_INFO << "serverCreateRoom, str_json: " << str_json;
+    string response = BuildWebSocketFrame(str_json);
+
+    auto callback = [&response, &room_id, &room_name](const std::unordered_set<int64_t>& user_ids)
+        {
+            LOG_INFO << "room_id: " << room_id << ", callback, user_ids.size():" << user_ids.size();
+            for (auto user_id : user_ids) {
+                CHttpConnPtr ws_conn_ptr = nullptr;
+                {
+                    lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
+                    ws_conn_ptr = s_user_ws_conn_map[user_id];
+                }
+                if (ws_conn_ptr) {
+                    ws_conn_ptr->send(response);
+                }
+                else {
+                    LOG_WARN << "cann't find user_id:" << user_id;
+                }
+            }
+        };
+
+
+    PubSubService::GetInstance().PubSubMessage(room_id, callback);
+    return 0;
+
 }
 
 void CWebSocketConn::Disconnect() {

@@ -10,6 +10,7 @@
 #include "cache_pool.h"
 #include "http_handler.h"
 #include "pub_sub_service.h"
+#include "api_room.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -92,11 +93,36 @@ private:
 
 int load_room_list() {
     PubSubService& pubSubService = PubSubService::GetInstance();
+    string err_msg;
+    std::vector<Room>& room_list = PubSubService::GetRoomList(); // get default room list
+    for (const auto& room : room_list) {
+        string room_id = room.room_id;
+        string existing_room_name;
+        int creator_id;
+        string create_time;
+        string update_time;
 
-    std::vector<Room>& all_rooms = PubSubService::GetRoomList(); //获取缺省的聊天室列表
+        // default room not exist in database, insert it to database
+        if (!ApiGetRoomInfo(room_id, existing_room_name, creator_id, create_time, update_time, err_msg)) {
+            const int SYSTEM_USER_ID = 1;
+            if (!ApiCreateRoom(room.room_id, room.room_name, SYSTEM_USER_ID, err_msg)) {
+                LOG_ERROR << "Failed to create room: " << room.room_id << ", room_name: "
+                    << room.room_name << ", error: " << err_msg;
+                continue;
+            }
+            LOG_INFO << "Created new room: " << room.room_id << ", room_name: " << room.room_name;
+        }
+    }
+
+    std::vector<Room> all_rooms;
+    if (!ApiGetAllRooms(all_rooms, err_msg)) {
+        LOG_ERROR << "Failed to get all rooms: " << err_msg;
+        return -1;
+    }
+
     for (const auto& room : all_rooms) {
+        PubSubService::AddRoom(room);
         pubSubService.AddRoomTopic(room.room_id, room.room_name, 1);
-        LOG_INFO << "Added room to PubSubService: " << room.room_id << " - " << room.room_name;
     }
 
     return 0;
@@ -144,7 +170,10 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    load_room_list();
+    if (load_room_list() < 0) {
+        LOG_ERROR << "load_room_list failed";
+        return -1;
+    }
 
     std::cout << "hello GitHub话题聊天室 ../../bin/chat-room\n";
 

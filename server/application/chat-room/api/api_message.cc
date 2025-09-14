@@ -59,7 +59,7 @@ int ApiGetRoomHistory(Room& room, MessageBatch& message_batch, const int msg_cou
             message_batch.messages.push_back(msg);
         }
 
-        LOG_INFO << "room_id: " << room.room_id << " , msgs.size() = " << msgs.size();
+        LOG_INFO << "room_id: " << room.room_id << " , msgs.size(): " << msgs.size();
 
         if (msgs.size() < msg_count) {
             message_batch.has_more = false;     // redis haven't more data can be read
@@ -93,17 +93,26 @@ int ApiStoreMessage(string room_id, std::vector<Message>& msgs) {
     CacheConn* cache_conn = cache_manager->GetCacheConn("msg");
     AUTO_REL_CACHECONN(cache_manager, cache_conn);
 
+    LOG_INFO << "msgs.size(): " << msgs.size();
+
     for (int i = 0;i < msgs.size();++i) {
         string json_msg = SerializeMessageToJson(msgs[i]);
         std::vector<pair<string, string>> field_value_pairs;
+
+        // redis 6.0.16: json data need enclosed in single quotation marks
+        //json_msg = "'" + json_msg + "'";
         field_value_pairs.push_back({ "payload", json_msg });
+
         LOG_INFO << "payload: " << json_msg;
         string id = "*";
+
         bool  ret = cache_conn->Xadd(room_id, id, field_value_pairs);
+
         if (!ret) {
             LOG_ERROR << "Xadd failed";
             return -1;
         }
+
         LOG_INFO << "room_id:" << room_id << ", msg.id:" << id << ", json_msg:" << json_msg;
         msgs[i].id = id;
     }

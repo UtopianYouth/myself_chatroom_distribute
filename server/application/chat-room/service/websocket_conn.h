@@ -16,19 +16,19 @@ public:
 
 private:
     int64_t user_id = -1;       // userid
-    string username;           // username
-    std::unordered_map<string, Room> rooms_map;    // had joined the chatrooms
+    string username;            // username
+    bool handshake_completed = false;   // websocket conn has completed?   
+    std::unordered_map<string, Room> rooms_map;    // has joined the chatrooms
 
     void SendCloseFrame(uint16_t code, const string& reason);
     void SendPongFrame();       // Pong frame
-    bool IsCloseFrame(const std::string& frame);
-
     int SendHelloMessage();
+
     int HandleClientMessages(Json::Value& root);
     int HandleRequestRoomHistory(Json::Value& root);
-    bool handshake_completed = false;   // the websocket conn of client with server 
+    int HandleClientCreateRoom(Json::Value& root);
 };
 
 using CWebSocketConnPtr = std::shared_ptr<CWebSocketConn>;
 
-#endif
+#endif // !__WEBSOCKET_CONN_H__

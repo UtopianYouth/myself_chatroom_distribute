@@ -915,7 +915,7 @@ bool CacheConn::Xadd(const string& key, string& id, const std::vector<std::pair<
     for (const auto& pair : field_value_pairs) {
         command += " " + pair.first + " " + pair.second;
     }
-    LOG_DEBUG << "command: " << command;
+    LOG_INFO << "command: " << command;
     // 发送命令
     redisReply* reply = (redisReply*)redisCommand(context_, command.c_str());
     if (!reply) {
