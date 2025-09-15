@@ -5,20 +5,26 @@
 #include <openssl/sha.h>
 #include "http_conn.h"
 #include "muduo/base/Logging.h" 
+#include "muduo/base/ThreadPool.h"
 #include"api_types.h"
 
 class CWebSocketConn : public CHttpConn {
 public:
+    static void InitThreadPool(int thread_num);
+
     CWebSocketConn(const TcpConnectionPtr& conn);
     virtual ~CWebSocketConn();
     virtual void OnRead(Buffer* buf);
     void Disconnect();
-
 private:
     int64_t user_id = -1;       // userid
     string username;            // username
-    bool handshake_completed = false;   // websocket conn has completed?   
-    std::unordered_map<string, Room> rooms_map;    // has joined the chatrooms
+    bool handshake_completed = false;               // websocket conn has completed
+    std::unordered_map<string, Room> rooms_map;     // has joined the chatrooms
+    string incomplete_frame_buffer;                 // store incomplete websocket frame
+    uint64_t stats_total_messages = 0;
+    uint64_t stats_total_bytes = 0;
+    static ThreadPool* s_thread_pool;
 
     void SendCloseFrame(uint16_t code, const string& reason);
     void SendPongFrame();       // Pong frame
@@ -30,5 +36,7 @@ private:
 };
 
 using CWebSocketConnPtr = std::shared_ptr<CWebSocketConn>;
+
+string BuildWebSocketFrame(const string& payload, const uint8_t opcode = 0x01);
 
 #endif // !__WEBSOCKET_CONN_H__

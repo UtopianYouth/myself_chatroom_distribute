@@ -12,12 +12,12 @@
 CHttpConn::CHttpConn(TcpConnectionPtr tcp_conn) :
     tcp_conn_(tcp_conn)
 {
-    uuid_ = std::any_cast<uint32_t>(tcp_conn_->getContext());
-    LOG_INFO << "Constructor CHttpConn uuid: " << uuid_;
+    this->uuid_ = std::any_cast<uint32_t>(tcp_conn_->getContext());
+    LOG_DEBUG << "Constructor CHttpConn uuid: " << this->uuid_;
 }
 
 CHttpConn::~CHttpConn() {
-    LOG_INFO << "Destructor CHttpConn uuid: " << uuid_;
+    LOG_DEBUG << "Destructor CHttpConn uuid: " << uuid_;
 }
 
 void CHttpConn::OnRead(Buffer* buf) // CHttpConn业务层面的OnRead
@@ -57,7 +57,7 @@ void CHttpConn::OnRead(Buffer* buf) // CHttpConn业务层面的OnRead
 }
 
 void CHttpConn::send(const string& data) {
-    LOG_INFO << "send:" << data;
+    LOG_DEBUG << "send:" << data;
     tcp_conn_->send(data.c_str(), data.size());
 }
 /**

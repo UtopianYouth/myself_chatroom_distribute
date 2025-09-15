@@ -21,7 +21,7 @@ describe("chat page", () => {
   const u2: User = { id: 2, username: "User two" };
   const beastRoom: Room = {
     id: "beast",
-    name: "程序员老廖",
+    name: "后端精进聊天室",
     hasMoreMessages: false,
     messages: [
       { id: "2-0", user: u2, timestamp: 1000, content: "Message 2 beast" },
@@ -68,7 +68,7 @@ describe("chat page", () => {
     );
 
     // Rooms rendered
-    expect(screen.getByText("程序员老廖")).toBeInTheDocument();
+    expect(screen.getByText("后端精进聊天室")).toBeInTheDocument();
     expect(screen.getByText("Web Assembly")).toBeInTheDocument();
 
     // Only messages for the wasm room are rendered, since it's the one selected
@@ -120,7 +120,7 @@ describe("chat page", () => {
 
       // The client draws the screen, selecting the room with the
       // latest message
-      expect(screen.getByText("程序员老廖")).toBeInTheDocument();
+      expect(screen.getByText("后端精进聊天室")).toBeInTheDocument();
       expect(screen.getByText("Web Assembly")).toBeInTheDocument();
       expect(screen.getByText("Message 1 wasm")).toBeInTheDocument(); // not the latest
       expect(screen.getAllByTestId("room-name")[0]).toHaveTextContent(

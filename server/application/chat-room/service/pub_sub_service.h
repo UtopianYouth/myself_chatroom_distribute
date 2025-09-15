@@ -47,10 +47,10 @@ public:
     // create room topic
     bool AddRoomTopic(const string& room_id, const string& room_topic, int64_t creator_id) {
         std::lock_guard<std::mutex> lock(this->room_topic_map_mutex);
-        LOG_INFO << "AddRoomTopic(), room_id: " << room_id << ", room_topic: " << room_topic << ", creator_id: " << creator_id;
+        LOG_DEBUG << "AddRoomTopic(), room_id: " << room_id << ", room_topic: " << room_topic << ", creator_id: " << creator_id;
         // the room topic is exists?
         if (this->room_topic_map.find(room_id) != this->room_topic_map.end()) {
-            LOG_INFO << "AddRoomTopic(), room_id: " << room_id << " already exists";
+            LOG_DEBUG << "AddRoomTopic(), room_id: " << room_id << " already exists";
             return false;
         }
         auto room_topic_ptr = std::make_shared<RoomTopic>(room_id, room_topic, creator_id);
@@ -71,7 +71,7 @@ public:
 
     // add user to room topic
     bool AddSubscriber(const string& room_id, int64_t user_id) {
-        LOG_INFO << "AddSubscriber(), room_id: " << room_id << ", user_id: " << user_id;
+        LOG_DEBUG << "AddSubscriber(), room_id: " << room_id << ", user_id: " << user_id;
         std::lock_guard<std::mutex> lock(this->room_topic_map_mutex);
         if (this->room_topic_map.find(room_id) == this->room_topic_map.end()) {
             LOG_WARN << "AddSubscriber(), can't find room_id: " << room_id;

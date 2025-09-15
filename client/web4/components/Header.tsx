@@ -25,7 +25,7 @@ export default function Header() {
   return (
     <div className="flex m-3">
       {/* Boost logo */}
-      <Image src={boostLogo} height={60} alt="Boost logo" priority />
+      <Image src={boostLogo} height={80} alt="Boost logo" priority />
 
       {/* 链接 */}
       <div className="flex-1 flex justify-end items-center">

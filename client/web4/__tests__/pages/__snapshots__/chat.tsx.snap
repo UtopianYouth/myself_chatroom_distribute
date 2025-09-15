@@ -30,7 +30,7 @@ exports[`chat page ChatScreen component 1`] = `
               class="m-0 font-bold pb-2"
               data-testid="room-name"
             >
-              程序员老廖
+              后端精进聊天室
             </p>
             <p
               class="m-0 overflow-hidden text-ellipsis whitespace-nowrap"

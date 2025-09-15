@@ -113,7 +113,7 @@ int CacheConn::Init() {
         freeReplyObject(reply);
     }
 
-    reply = (redisReply*)redisCommand(context_, "SELECT %d", 0);
+    reply = (redisReply*)redisCommand(context_, "SELECT %d", this->db_index_);
 
     if (reply && (reply->type == REDIS_REPLY_STATUS) &&
         (strncmp(reply->str, "OK", 2) == 0)) {
@@ -858,7 +858,7 @@ bool  CacheConn::GetXrevrange(const string& key,
         command += " COUNT " + std::to_string(count);
     }
 
-    LOG_INFO << "--------------->" << command;
+    //LOG_DEBUG << "command: " << command;
 
     // 发送命令
     redisReply* reply = (redisReply*)redisCommand(context_, command.c_str());
@@ -891,7 +891,7 @@ bool  CacheConn::GetXrevrange(const string& key,
                     value = fields->element[j + 1]->str;
                     message_content += field + ": " + value + ", ";
                 }
-                LOG_INFO << string("key: " + key + ", ID: " + message_id + ", Content: " + message_content);
+                //LOG_INFO << string("key: " + key + ", ID: " + message_id + ", Content: " + message_content);
                 msgs.push_back({ message_id, value });
             }
         }
@@ -931,7 +931,8 @@ bool CacheConn::Xadd(const string& key, string& id, const std::vector<std::pair<
     }
 
     // 打印成功消息
-    std::cout << "Message added with ID: " << reply->str << std::endl;
+    //std::cout << "Message added with ID: " << reply->str << std::endl;
+
     id = reply->str;
     // 释放回复对象
     freeReplyObject(reply);

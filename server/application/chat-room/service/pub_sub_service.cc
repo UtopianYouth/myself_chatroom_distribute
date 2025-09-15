@@ -1,10 +1,14 @@
 #include "pub_sub_service.h"
 
 static std::vector<Room> s_room_list = {
-    {"0001", "utopianyouth1", 1, "", "", ""},
-    {"0002", "utopianyouth2", 2, "", "", ""},
-    {"0003", "utopianyouth3", 3, "", "", ""},
-    {"0004", "utopianyouth4", 4, "", "", ""}
+    {"0001", "Linux Study Group", 1, "", "", ""},
+    {"0002", "C++ Study Group", 2, "", "", ""},
+    {"0003", "ThreadPool Study Group", 3, "", "", ""},
+    {"0004", "Database Study Group", 4, "", "", ""},
+    {"0005", "Network Study Group", 5, "", "", ""},
+    {"0006", "Redis Study Group", 6, "", "", ""},
+    {"0007", "Nginx Study Group", 7, "", "", ""},
+    {"0008", "Git Study Group", 8, "", "", ""}
 };
 
 static std::mutex s_mutex_room_list;

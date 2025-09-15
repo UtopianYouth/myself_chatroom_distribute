@@ -1,5 +1,6 @@
 #include <iostream>
 #include <signal.h>
+#include <thread>
 #include "muduo/net/TcpServer.h"
 #include  "muduo/net/TcpConnection.h"
 #include "muduo/base/ThreadPool.h"
@@ -36,7 +37,10 @@ public:
     }
     void start() {
         if (num_threads_ != 0) {
-            thread_pool_.start(num_threads_);
+            // init thread pool
+            CWebSocketConn::InitThreadPool(num_threads_);
+
+            //thread_pool_.start(num_threads_);
         }
         server_.start();
     }
@@ -62,22 +66,26 @@ private:
     }
 
     void onMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp time) {
-        LOG_INFO << "onMessage " << conn.get();
+        LOG_DEBUG << "onMessage " << conn.get();
         uint32_t uuid = std::any_cast<uint32_t>(conn->getContext());
         mtx_.lock();
         HttpHandlerPtr http_conn = s_http_handler_map[uuid];
         mtx_.unlock();
-        //处理 相关业务
-        if (num_threads_ != 0)  //开启了线程池
+
+        // handle http request
+        if (num_threads_ != 0) {
+            // use and start thread pool
             thread_pool_.run(std::bind(&HttpHandler::OnRead, http_conn, buf)); //给到业务线程处理
-        else {  //没有开启线程池
-            http_conn->OnRead(buf);  // 直接在io线程处理
+        }
+        else {
+            // only io thread handle http request
+            http_conn->OnRead(buf);
         }
 
     }
 
     void onWriteComplete(const TcpConnectionPtr& conn) {
-        LOG_INFO << "onWriteComplete " << conn.get();
+        LOG_DEBUG << "onWriteComplete " << conn.get();
     }
 
 
@@ -88,7 +96,7 @@ private:
 
     //线程池
     ThreadPool thread_pool_;
-    const int num_threads_ = 0;
+    const int num_threads_ = 4;
 };
 
 int load_room_list() {
@@ -195,7 +203,7 @@ int main(int argc, char* argv[])
     EventLoop loop;     //主循环
     InetAddress addr(http_bind_ip, http_bind_port);     // 注意别搞错位置了
     LOG_INFO << "port: " << http_bind_port;
-    HttpServer server(&loop, addr, "HttpServer", num_event_loops, num_threads);
+    HttpServer server(&loop, addr, "HttpServer", num_event_loops, 4);
     server.start();
     loop.loop(timeout_ms); //1000ms
     return 0;

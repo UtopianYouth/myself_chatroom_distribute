@@ -1,11 +1,12 @@
 #include<cstring>
+#include <thread>
+#include<sstream>
 #include "api_types.h"
 #include "api_message.h"
 #include "pub_sub_service.h"
 #include "websocket_conn.h"
 #include "api_room.h"
 #include "base64.h"
-
 
 typedef struct WebSocketFrame {
     bool fin;
@@ -16,8 +17,9 @@ typedef struct WebSocketFrame {
     std::string payload_data;
 }WebSocketFrame;
 
-std::unordered_map<int64_t, CHttpConnPtr> s_user_ws_conn_map;
+std::unordered_map<int64_t, CHttpConnPtr> s_user_ws_conn_map;       // store user id and websocket conn
 std::mutex s_mtx_user_ws_conn_map;
+ThreadPool* CWebSocketConn::s_thread_pool = nullptr;                // thread pool handles for websocket conn
 
 // handshake
 string GenerateWebSocketHandshakeResponse(const string& key) {
@@ -38,7 +40,7 @@ string GenerateWebSocketHandshakeResponse(const string& key) {
 }
 
 // create websocket frame
-string BuildWebSocketFrame(const string& payload, uint8_t opcode = 0x01) {
+string BuildWebSocketFrame(const string& payload, const uint8_t opcode) {
     string frame;
 
     frame.push_back(0x80 | (opcode & 0x0F));
@@ -126,8 +128,8 @@ string ExtractSid(const string& input) {
     // the length of "sid=" is 4
     sid_start += 4;
 
-    // get end location of sid
-    size_t sid_end = input.find_first_of(";", sid_start);
+    // get end location of sid, ' ' or '&' or ';'
+    size_t sid_end = input.find_first_of(" &;", sid_start);
 
     if (sid_end == string::npos) {
         sid_end = input.length();
@@ -154,14 +156,16 @@ CWebSocketConn::CWebSocketConn(const TcpConnectionPtr& conn)
 }
 
 CWebSocketConn::~CWebSocketConn() {
-    LOG_INFO << "Destructor CWebSocketConn";
+    LOG_INFO << "Destructor CWebSocketConn" << this->user_id << ", stats_total_messages: " << this->stats_total_messages
+        << ", stats_total_bytes: " << this->stats_total_bytes;
 }
+
 
 void CWebSocketConn::OnRead(Buffer* buf) {
     if (!this->handshake_completed) {
         // WebSocket handshake
         string request = buf->retrieveAllAsString();
-        LOG_INFO << "request: " << request;
+        LOG_DEBUG << "request: " << request;
 
         // if don't judge Websocket frame, please judgement first
         size_t key_start = request.find("Sec-WebSocket-Key: ");
@@ -170,7 +174,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             size_t key_end = request.find("\r\n", key_start);
             std::string key = request.substr(key_start, key_end - key_start);
 
-            LOG_INFO << "key: " << key;
+            LOG_DEBUG << "key: " << key;
 
             // generate handshake response
             std::string response = GenerateWebSocketHandshakeResponse(key);
@@ -178,11 +182,11 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             // send http response
             this->send(response);
             this->handshake_completed = true;
-            LOG_INFO << "WebSocket handshake completed";
+            LOG_DEBUG << "WebSocket handshake completed";
 
             // verify cookie
             string Cookie = this->headers_["Cookie"];
-            LOG_INFO << "Cookie: " << Cookie;
+            LOG_DEBUG << "Cookie: " << Cookie;
 
             string sid;
             string email;
@@ -190,7 +194,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             if (!Cookie.empty()) {
                 sid = ExtractSid(Cookie);      // get cookie data
             }
-            LOG_INFO << "sid: " << sid;
+            LOG_DEBUG << "sid: " << sid;
             int ret = ApiGetUsernameAndUseridByCookie(sid, this->username, this->user_id, email);
             if (Cookie.empty() || ret < 0) {
                 string reason;
@@ -202,12 +206,13 @@ void CWebSocketConn::OnRead(Buffer* buf) {
                     reason = "mysql db failed";
                 }
 
-                // send close websocket frame
+                // validation failed, send close websocket frame
+                LOG_WARN << "cookie validation failed, reason: " << reason;
                 this->SendCloseFrame(1008, reason);
             }
             else {
                 // get chatrooms that current user join
-                LOG_INFO << "cookie validation ok";
+                LOG_DEBUG << "cookie validation ok";
 
                 s_mtx_user_ws_conn_map.lock();
                 // insert current userid and websocket
@@ -237,69 +242,124 @@ void CWebSocketConn::OnRead(Buffer* buf) {
         }
     }
     else {
-        // parse websocket frame
-        std::string request = buf->retrieveAllAsString();
-        WebSocketFrame frame = ParseWebSocketFrame(request);
-        LOG_INFO << "client to server, parse websocket frame after: " << frame.payload_data;
-
-        if (frame.opcode == 0x01) {
-            // 0x01: text frame
-            //parse type field, handle various message by type field 
-            bool res;
-            Json::Value root;
-            Json::Reader jsonReader;
-            res = jsonReader.parse(frame.payload_data, root);
-            if (!res) {
-                LOG_WARN << "parse websocket message json failed";
-                this->Disconnect();
+        // WebSocket frame
+        // TODO: handle WebSocket frame
+        this->incomplete_frame_buffer += buf->retrieveAllAsString();
+        LOG_DEBUG << "current buffer length: " << this->incomplete_frame_buffer.length();
+        while (!this->incomplete_frame_buffer.empty()) {
+            // 
+            if (this->incomplete_frame_buffer.length() < 2) {
+                LOG_DEBUG << "Not enough data for frame header, waiting for more...";
                 return;
             }
 
-            // get type field
-            string  type;
-            if (root["type"].isNull()) {
-                LOG_WARN << "type null";
-                this->Disconnect();
+            const uint8_t* bytes = reinterpret_cast<const uint8_t*>(this->incomplete_frame_buffer.data());
+            uint64_t payload_len = bytes[1] & 0x7F;
+            size_t header_length = 2;
+
+            // calculate payload length
+            if (payload_len == 126) {
+                if (this->incomplete_frame_buffer.length() < 4) {
+                    LOG_DEBUG << "not enough data for extended length(2 bytes), waiting for more...";
+                    return;
+                }
+                header_length += 2;
+                payload_len = (bytes[2] << 8) | bytes[3];
+            }
+            else if (payload_len == 127) {
+                if (this->incomplete_frame_buffer.length() < 10) {
+                    LOG_DEBUG << "not enough data for extended length(8 bytes), waiting for more...";
+                    return;
+                }
+                header_length += 8;
+                payload_len = ((uint64_t)bytes[2] << 56) | ((uint64_t)bytes[3] << 48) |
+                    ((uint64_t)bytes[4] << 40) | ((uint64_t)bytes[5] << 32) |
+                    ((uint64_t)bytes[6] << 24) | ((uint64_t)bytes[7] << 16) |
+                    ((uint64_t)bytes[8] << 8) | bytes[9];
+            }
+
+            // is there mask 
+            bool has_mask = (bytes[1] & 0x80) != 0;
+            if (has_mask) {
+                header_length += 4;
+            }
+
+            // the total length of the frame
+            size_t total_frame_length = header_length + payload_len;
+
+            //LOG_INFO << "total frame length: " << total_frame_length;
+
+            // check if there is enough data for the complete frame
+            if (this->incomplete_frame_buffer.length() < total_frame_length) {
+                LOG_DEBUG << "not enough data for complete frame, waiting for more... "
+                    << "need: " << total_frame_length
+                    << ", have: " << this->incomplete_frame_buffer.length();
                 return;
             }
-            type = root["type"].asString();
 
-            int ret;
+            // complete websocket frame ==> buffer maybe have more than one websocket frame
+            if (this->incomplete_frame_buffer.length() >= total_frame_length) {
+                // copy one complete websocket frame and delete handled complete websocket frame
+                string frame_data = this->incomplete_frame_buffer.substr(0, total_frame_length);
+                this->incomplete_frame_buffer = this->incomplete_frame_buffer.substr(total_frame_length);
 
-            if (type == "clientMessages") {
-                ret = this->HandleClientMessages(root);
-                if (ret < 0) {
-                    LOG_WARN << "HandleClientMessages failed";
-                }
+                // shared_from_this() ==> copy constructor of shared_ptr
+                auto self = shared_from_this();
+
+                // push websocket handle task to thread pool
+                this->s_thread_pool->run([this, self, frame_data]()
+                    {
+                        LOG_INFO << "run in thread pool";
+                        // parse websocket frame
+                        WebSocketFrame frame = ParseWebSocketFrame(frame_data);
+                        ++this->stats_total_messages;
+                        this->stats_total_bytes += frame.payload_data.size();
+
+                        // get thread id
+                        std::ostringstream oss;
+                        oss << std::this_thread::get_id();
+                        LOG_DEBUG << "pool thread id: " << oss.str() << ", stats_total_messages: "
+                            << this->stats_total_messages << ", stats_total_bytes: " << this->stats_total_bytes;
+
+                        // handle frame
+                        if (frame.opcode == 0x01) {
+                            // text frame
+                            LOG_DEBUG << "process text frame, payload: " << frame.payload_data;
+                            bool res;
+                            Json::Value root;
+                            Json::Reader jsonReader;
+                            res = jsonReader.parse(frame.payload_data, root);
+                            if (!res) {
+                                LOG_WARN << "parse json failed ";
+                                return;
+                            }
+                            else {
+                                string type;
+                                if (root.isObject() && !root["type"].isNull()) {
+                                    type = root["type"].asString();
+                                    if (type == "clientMessages") {
+                                        HandleClientMessages(root);
+                                    }
+                                    else if (type == "requestRoomHistory") {
+                                        HandleRequestRoomHistory(root);
+                                    }
+                                    else if (type == "clientCreateRoom") {
+                                        HandleClientCreateRoom(root);
+                                    }
+                                }
+                                else {
+                                    LOG_ERROR << "data no a json object";
+                                }
+                            }
+                        }
+                        else if (frame.opcode == 0x08) {
+                            // close frame
+                            LOG_DEBUG << "received close frame, closing connection...";
+                            this->Disconnect();
+                        }
+                    }
+                );
             }
-            else if (type == "requestRoomHistory") {
-                ret = this->HandleRequestRoomHistory(root);
-                if (ret < 0) {
-                    LOG_WARN << "HandleRequestRoomHistory failed";
-                }
-            }
-            else if (type == "clientCreateRoom") {
-                ret = this->HandleClientCreateRoom(root);
-                if (ret < 0) {
-                    LOG_WARN << "HandleClientCreateRoom failed";
-                }
-            }
-            else {
-                LOG_ERROR << "unknown type: " << type;
-            }
-        }
-        else if (frame.opcode == 0x08) {
-            // 0x8: close frame
-            LOG_INFO << "Received close frame, closing connection...";
-            this->Disconnect();
-        }
-        else if (frame.opcode == 0x09) {
-            // 0x09: ping frame
-            LOG_INFO << "Received Ping frame, sending Pong frame...";
-            this->SendPongFrame();
-        }
-        else {
-            LOG_ERROR << "can't handle opcode: " << frame.opcode;
         }
     }
 }
@@ -344,7 +404,7 @@ int CWebSocketConn::SendHelloMessage() {
             LOG_ERROR << "ApiGetRoomHistory failed";
             return -1;
         }
-        LOG_INFO << "room: " << room_item.room_name << ", history_last_message_id:" << it->second.history_last_message_id;
+        LOG_DEBUG << "room: " << room_item.room_name << ", history_last_message_id:" << it->second.history_last_message_id;
 
         Json::Value  room;
         room["id"] = room_item.room_id;             // chatroom id
@@ -379,11 +439,12 @@ int CWebSocketConn::SendHelloMessage() {
     Json::FastWriter writer;
     string str_json = writer.write(root);
 
-    LOG_INFO << "Serialized JSON: " << str_json;
+    LOG_DEBUG << "Serialized JSON: " << str_json;
 
     // encapsulate websocket frame
     std::string hello = BuildWebSocketFrame(str_json);
     send(hello);
+    return 0;
 }
 
 int CWebSocketConn::HandleClientMessages(Json::Value& root) {
@@ -457,12 +518,12 @@ int CWebSocketConn::HandleClientMessages(Json::Value& root) {
     root["payload"] = payload;
     Json::FastWriter writer;
     string str_json = writer.write(root);
-    LOG_INFO << "serverMessages: " << str_json;
+    LOG_DEBUG << "serverMessages: " << str_json;
     string response = BuildWebSocketFrame(str_json);
 
     auto callback = [&response, &room_id, this](const std::unordered_set<int64_t>& user_ids)
         {
-            LOG_INFO << "room_id:" << room_id << ", callback " << ", user_ids.size(): " << user_ids.size();
+            LOG_DEBUG << "room_id:" << room_id << ", callback " << ", user_ids.size(): " << user_ids.size();
             // traverse user_ids, user_ids is from RoomTopic
             for (int64_t user_id : user_ids) {
                 CHttpConnPtr ws_conn_ptr = nullptr;
@@ -472,7 +533,7 @@ int CWebSocketConn::HandleClientMessages(Json::Value& root) {
 
                 }
                 if (ws_conn_ptr) {
-                    ws_conn_ptr->send(response);
+                    ws_conn_ptr->send(response);    // send to other websocket conn
                 }
                 else {
                     LOG_WARN << "can't find userid: " << user_id;
@@ -505,11 +566,15 @@ int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
     MessageBatch  message_batch;
     room.history_last_message_id = firstMessageId;
 
+    LOG_DEBUG << "1  room_id:" << roomId << ", history_last_message_id:" << room.history_last_message_id;
+
     int ret = ApiGetRoomHistory(room, message_batch);
     if (ret < 0) {
         LOG_ERROR << "ApiGetRoomHistory() failed";
         return -1;
     }
+
+    LOG_DEBUG << "2  room_id:" << roomId << ", history_last_message_id:" << room.history_last_message_id;
 
     // encapsulate json
     root = Json::Value();   // clear
@@ -570,7 +635,7 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
 
     // generate room_id
     room_id = GenerateUUID();
-    LOG_INFO << "HandleClientCreateRoom(), room_id:" << room_id << ", room_name:" << room_name;
+    LOG_DEBUG << "HandleClientCreateRoom(), room_id:" << room_id << ", room_name:" << room_name;
 
     // create chatroom and store database
     string err_msg;
@@ -594,7 +659,7 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
     {
         std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
         for (auto it = s_user_ws_conn_map.begin(); it != s_user_ws_conn_map.end(); it++) {
-            LOG_INFO << "AddSubscriber(), room_id: " << room_id << ", user_id:" << it->first;
+            LOG_DEBUG << "AddSubscriber(), room_id: " << room_id << ", user_id:" << it->first;
             PubSubService::GetInstance().AddSubscriber(room_id, it->first);
         }
     }
@@ -650,8 +715,21 @@ void CWebSocketConn::Disconnect() {
         std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
         auto existing_conn = s_user_ws_conn_map.find(this->user_id);
         if (existing_conn != s_user_ws_conn_map.end()) {
-            LOG_INFO << "s_user_ws_conn_map.erase(), userid:" << this->user_id;
+            LOG_DEBUG << "disconnect, userid: " << this->user_id << " from s_user_ws_conn_map erase";
+            LOG_DEBUG << "1 s_user_ws_conn_map.size(): " << s_user_ws_conn_map.size();
+
             s_user_ws_conn_map.erase(existing_conn);
+
+            LOG_DEBUG << "2 s_user_ws_conn_map.size(): " << s_user_ws_conn_map.size();
         }
+    }
+}
+
+void CWebSocketConn::InitThreadPool(int thread_num) {
+    LOG_INFO << "==========================> InitThreadPool, thread_num:" << thread_num;
+
+    if (!s_thread_pool) {
+        s_thread_pool = new ThreadPool("WebSocketConnThreadPool");
+        s_thread_pool->start(thread_num);
     }
 }
