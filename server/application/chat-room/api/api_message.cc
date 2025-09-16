@@ -60,7 +60,7 @@ int ApiGetRoomHistory(Room& room, MessageBatch& message_batch, const int msg_cou
             message_batch.messages.push_back(msg);
         }
 
-        LOG_INFO << "room_id: " << room.room_id << " , msgs.size(): " << msgs.size();
+        LOG_DEBUG << "room_id: " << room.room_id << " , msgs.size(): " << msgs.size();
 
         if (msgs.size() < msg_count) {
             message_batch.has_more = false;     // redis haven't more data can be read

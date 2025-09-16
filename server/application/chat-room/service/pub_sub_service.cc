@@ -51,7 +51,7 @@ int PubSubService::AddRoom(const Room& room) {
     // check if room exists
     for (const auto& r : s_room_list) {
         if (r.room_id == room.room_id) {
-            LOG_WARN << "room_id " << r.room_id << " already exists";
+            LOG_DEBUG << "room_id " << r.room_id << " already exists";
             return -1;
         }
     }

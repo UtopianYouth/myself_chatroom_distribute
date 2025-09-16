@@ -119,7 +119,7 @@ int GetUserNameAndUseridByEmail(string& email, string& username, int64_t& userid
         username = result_set->GetString("username");
         userid = result_set->GetInt("id");
 
-        LOG_INFO << "username: " << username;
+        LOG_DEBUG << "username: " << username;
         ret = 0;
     }
     else {

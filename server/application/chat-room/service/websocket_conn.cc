@@ -220,7 +220,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
                 auto existing_conn = s_user_ws_conn_map.find(this->user_id);
                 if (existing_conn != s_user_ws_conn_map.end()) {
                     s_user_ws_conn_map.erase(existing_conn);
-                    LOG_INFO << "old s_user_ws_conn_map.erase(), userid:" << this->user_id;
+                    LOG_DEBUG << "old websocket conn founded and will be cover, user_id: " << this->user_id;
                 }
                 // the same userid maybe exists, because websocket conn maybe don't close
                 // force insert(update)
@@ -242,8 +242,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
         }
     }
     else {
-        // WebSocket frame
-        // TODO: handle WebSocket frame
+        // loop handle WebSocket frame
         this->incomplete_frame_buffer += buf->retrieveAllAsString();
         LOG_DEBUG << "current buffer length: " << this->incomplete_frame_buffer.length();
         while (!this->incomplete_frame_buffer.empty()) {
@@ -284,12 +283,10 @@ void CWebSocketConn::OnRead(Buffer* buf) {
                 header_length += 4;
             }
 
-            // the total length of the frame
+            // the length of one websocket frame
             size_t total_frame_length = header_length + payload_len;
 
-            //LOG_INFO << "total frame length: " << total_frame_length;
-
-            // check if there is enough data for the complete frame
+            // check is enough data for one websocket frame
             if (this->incomplete_frame_buffer.length() < total_frame_length) {
                 LOG_DEBUG << "not enough data for complete frame, waiting for more... "
                     << "need: " << total_frame_length
@@ -309,7 +306,6 @@ void CWebSocketConn::OnRead(Buffer* buf) {
                 // push websocket handle task to thread pool
                 this->s_thread_pool->run([this, self, frame_data]()
                     {
-                        LOG_INFO << "run in thread pool";
                         // parse websocket frame
                         WebSocketFrame frame = ParseWebSocketFrame(frame_data);
                         ++this->stats_total_messages;
@@ -726,7 +722,7 @@ void CWebSocketConn::Disconnect() {
 }
 
 void CWebSocketConn::InitThreadPool(int thread_num) {
-    LOG_INFO << "==========================> InitThreadPool, thread_num:" << thread_num;
+    LOG_INFO << "InitThreadPool, thread_num:" << thread_num;
 
     if (!s_thread_pool) {
         s_thread_pool = new ThreadPool("WebSocketConnThreadPool");
