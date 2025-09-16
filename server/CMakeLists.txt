@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-project(tuchuang C CXX)
+project(chatroom C CXX)
 
 enable_testing()
 

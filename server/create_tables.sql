@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS room_info (
     creator_id BIGINT NOT NULL,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE (room_name),
     INDEX idx_creator (creator_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
