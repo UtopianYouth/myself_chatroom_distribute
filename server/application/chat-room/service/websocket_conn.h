@@ -37,6 +37,9 @@ private:
 
 using CWebSocketConnPtr = std::shared_ptr<CWebSocketConn>;
 
+extern std::unordered_map<int64_t, CHttpConnPtr> s_user_ws_conn_map;       // store user id and websocket conn
+extern std::mutex s_mtx_user_ws_conn_map;
+
 string BuildWebSocketFrame(const string& payload, const uint8_t opcode = 0x01);
 
 #endif // !__WEBSOCKET_CONN_H__

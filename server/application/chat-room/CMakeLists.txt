@@ -80,7 +80,7 @@ endif()
 
 # 根据RPC开关决定链接的库
 if(ENABLE_RPC)
-    TARGET_LINK_LIBRARIES(chat-room6 muduo_net jsoncpp 
+    TARGET_LINK_LIBRARIES(chat-room muduo_net jsoncpp 
         mysqlclient uuid ssl crypto
         ${_REFLECTION}
         ${_GRPC_GRPCPP}

@@ -17,6 +17,7 @@ typedef struct WebSocketFrame {
     std::string payload_data;
 }WebSocketFrame;
 
+// 全局变量定义
 std::unordered_map<int64_t, CHttpConnPtr> s_user_ws_conn_map;       // store user id and websocket conn
 std::mutex s_mtx_user_ws_conn_map;
 ThreadPool* CWebSocketConn::s_thread_pool = nullptr;                // thread pool handles for websocket conn
@@ -540,15 +541,6 @@ int CWebSocketConn::HandleClientMessages(Json::Value& root) {
     PubSubService::GetInstance().PubSubMessage(room_id, callback);
 
     return 0;
-}
-
-void CWebSocketConn::SendPongFrame() {
-    if (!tcp_conn_) {
-        return;
-    }
-    // 0x8A: Pong frame
-    char frame[2] = { 0x8A, 0x00 };
-    tcp_conn_->send(frame, sizeof(frame));
 }
 
 int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {

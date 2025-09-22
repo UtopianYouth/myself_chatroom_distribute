@@ -1,0 +1,379 @@
+[
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/AsyncLogging.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/AsyncLogging.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/AsyncLogging.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/Condition.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Condition.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Condition.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/CountDownLatch.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/CountDownLatch.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/CountDownLatch.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/CurrentThread.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/CurrentThread.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/CurrentThread.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/Date.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Date.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Date.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/Exception.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Exception.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Exception.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/FileUtil.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/FileUtil.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/FileUtil.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/LogFile.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/LogFile.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/LogFile.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/Logging.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Logging.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Logging.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/LogStream.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/LogStream.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/LogStream.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/ProcessInfo.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/ProcessInfo.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/ProcessInfo.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/Timestamp.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Timestamp.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Timestamp.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/Thread.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Thread.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/Thread.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/ThreadPool.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/ThreadPool.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/ThreadPool.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/TimeZone.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/TimeZone.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/TimeZone.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/base/CMakeFiles/muduo_base.dir/md5.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/md5.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/base/md5.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/Acceptor.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Acceptor.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Acceptor.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/Buffer.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Buffer.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Buffer.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/Channel.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Channel.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Channel.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/Connector.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Connector.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Connector.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/EventLoop.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/EventLoop.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/EventLoop.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/EventLoopThread.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/EventLoopThread.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/EventLoopThread.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/EventLoopThreadPool.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/EventLoopThreadPool.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/EventLoopThreadPool.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/InetAddress.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/InetAddress.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/InetAddress.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/Poller.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Poller.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Poller.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/poller/DefaultPoller.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/poller/DefaultPoller.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/poller/DefaultPoller.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/poller/EPollPoller.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/poller/EPollPoller.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/poller/EPollPoller.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/poller/PollPoller.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/poller/PollPoller.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/poller/PollPoller.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/Socket.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Socket.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Socket.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/SocketsOps.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/SocketsOps.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/SocketsOps.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/TcpClient.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TcpClient.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TcpClient.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/TcpConnection.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TcpConnection.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TcpConnection.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/TcpServer.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TcpServer.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TcpServer.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/Timer.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Timer.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/Timer.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/CMakeFiles/muduo_net.dir/TimerQueue.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TimerQueue.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/TimerQueue.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/http/CMakeFiles/muduo_http.dir/HttpServer.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/http/HttpServer.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/http/HttpServer.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/http/CMakeFiles/muduo_http.dir/HttpResponse.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/http/HttpResponse.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/http/HttpResponse.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/http/CMakeFiles/muduo_http.dir/HttpContext.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/http/HttpContext.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/http/HttpContext.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/inspect/CMakeFiles/muduo_inspect.dir/Inspector.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/Inspector.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/Inspector.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/inspect/CMakeFiles/muduo_inspect.dir/PerformanceInspector.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/PerformanceInspector.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/PerformanceInspector.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/inspect/CMakeFiles/muduo_inspect.dir/ProcessInspector.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/ProcessInspector.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/ProcessInspector.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o muduo/net/inspect/CMakeFiles/muduo_inspect.dir/SystemInspector.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/SystemInspector.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/muduo/net/inspect/SystemInspector.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/main.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/main.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/main.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/service/http_conn.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/http_conn.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/http_conn.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/service/http_parser.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/http_parser.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/http_parser.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/service/http_parser_wrapper.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/http_parser_wrapper.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/http_parser_wrapper.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/service/pub_sub_service.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/pub_sub_service.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/pub_sub_service.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/service/websocket_conn.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/websocket_conn.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service/websocket_conn.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/base/base64.cpp.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base/base64.cpp",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base/base64.cpp"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/base/config_file_reader.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base/config_file_reader.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base/config_file_reader.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/base/util.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base/util.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base/util.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/api/api_common.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_common.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_common.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/api/api_login.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_login.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_login.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/api/api_message.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_message.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_message.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/api/api_register.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_register.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_register.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/api/api_room.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_room.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api/api_room.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/gcc  -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/async.c.o   -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/async.c",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/async.c"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/cache_pool.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/cache_pool.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/cache_pool.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/gcc  -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/dict.c.o   -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/dict.c",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/dict.c"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/gcc  -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/hiredis.c.o   -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/hiredis.c",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/hiredis.c"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/gcc  -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/net.c.o   -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/net.c",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/net.c"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/gcc  -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/read.c.o   -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/read.c",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/read.c"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/gcc  -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/sds.c.o   -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/sds.c",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/sds.c"
+}
+]

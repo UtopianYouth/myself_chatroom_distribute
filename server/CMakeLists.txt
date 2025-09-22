@@ -64,7 +64,8 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/muduo/lib) #库文件路径
 
 add_definitions(-w) # 先关闭警告
 
-
+# 强制使用系统的 protobuf 头文件，避免 /usr/local/include 冲突
+include_directories(BEFORE SYSTEM /usr/include/google/protobuf)
 include_directories(${PROJECT_SOURCE_DIR})
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE)

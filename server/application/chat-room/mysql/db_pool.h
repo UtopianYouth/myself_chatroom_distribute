@@ -8,7 +8,6 @@
 #include <mutex>
 #include <stdint.h>
 #include <string>
-
 #include <mysql.h>
 
 #define MAX_ESCAPE_STRING_LEN 10240
