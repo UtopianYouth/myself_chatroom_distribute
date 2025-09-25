@@ -442,117 +442,39 @@ int CWebSocketConn::SendHelloMessage() {
 }
 
 int CWebSocketConn::HandleClientMessages(Json::Value& root) {
-    // 验证payload字段
-    if (!root.isMember("payload") || root["payload"].isNull()) {
-        LOG_ERROR << "Missing payload in clientMessages";
-        return -1;
-    }
-    
-    Json::Value payload = root["payload"];
-    
-    // 验证必要字段
-    if (!payload.isMember("roomId") || !payload.isMember("messages")) {
-        LOG_ERROR << "Missing roomId or messages in payload";
-        return -1;
-    }
-    
-    string room_id = payload["roomId"].asString();
-    Json::Value messages = payload["messages"];
-    
-    Json::Value request_data;
-    request_data["roomId"] = room_id;
-    request_data["userId"] = (Json::Int64)this->user_id;
-    request_data["username"] = this->username;
-    request_data["messages"] = messages;
-    
-    Json::FastWriter writer;
-    string post_data = writer.write(request_data);
-    
-    LOG_DEBUG << "Sending to logic layer: " << post_data;
-    
-    // 转发给logic层
+    // 转发给logic层处理
     string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
     LogicClient logic_client(logic_server_addr);
     string response_json;
     
-    // 调用logic层的send接口（这会触发Kafka消息发送）
-    string url = logic_server_addr + "/logic/send";
-    if (!logic_client.sendHttpRequest(url, post_data, response_json)) {
+    // 调用logic层的handleSend方法（这会触发Kafka消息发送）
+    int ret = logic_client.handleSend(root, this->user_id, this->username, response_json);
+    
+    if (ret == 0) {
+        LOG_INFO << "Message sent to logic layer successfully, will be broadcasted via Kafka->Job->gRPC";
+    } else {
         LOG_ERROR << "Failed to send message to logic layer";
-        return -1;
     }
     
-    // 解析logic层返回的响应
-    Json::Value response_root;
-    Json::Reader reader;
-    if (!reader.parse(response_json, response_root)) {
-        LOG_ERROR << "Failed to parse logic response: " << response_json;
-        return -1;
-    }
-    
-    // 检查logic层是否成功处理
-    if (!response_root.isMember("status") || response_root["status"].asString() != "success") {
-        LOG_ERROR << "Logic layer failed to process message: " << response_json;
-        return -1;
-    }
-    
-    LOG_INFO << "Message sent to logic layer successfully, will be broadcasted via Kafka->Job->gRPC";
-    
-    // 在分布式模式下，serverMessages响应通过以下流程发送
-    // logic-> Kafka -> Job -> gRPC -> comet_service.cc -> broadcastRoom
-
-    return 0;
+    return ret;
 }
 
 int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
-    // 验证payload字段
-    if (!root.isMember("payload") || root["payload"].isNull()) {
-        LOG_ERROR << "Missing payload in requestRoomHistory";
-        return -1;
-    }
-    
-    Json::Value payload = root["payload"];
-    
-    // 验证必要字段
-    if (!payload.isMember("roomId") || payload["roomId"].isNull()) {
-        LOG_ERROR << "Missing roomId in requestRoomHistory payload";
-        return -1;
-    }
-    
-    string roomId = payload["roomId"].asString();
-    string firstMessageId = payload.get("firstMessageId", "").asString();
-    int count = payload.get("count", 10).asInt();
-    if (count <= 0) count = 10; // 默认值
-    
-    LOG_INFO << "HandleRequestRoomHistory: roomId=" << roomId 
-             << ", firstMessageId=" << firstMessageId 
-             << ", count=" << count;
-    
-    // 通过HTTP客户端转发到logic层
+    // 转发给logic层处理
     string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
     LogicClient logic_client(logic_server_addr);
     string response_json;
-    int ret = logic_client.getRoomHistory(roomId, firstMessageId, count, response_json);
     
-    if (ret != 0) {
-        LOG_ERROR << "Failed to get room history via logic layer";
-        return -1;
+    // 调用logic层的handleRoomHistory方法（这会触发Kafka消息发送）
+    int ret = logic_client.handleRoomHistory(root, this->user_id, this->username, response_json);
+    
+    if (ret == 0) {
+        LOG_INFO << "Room history request sent to logic layer successfully, will be sent via Kafka->Job->gRPC";
+    } else {
+        LOG_ERROR << "Failed to send room history request to logic layer";
     }
     
-    // 解析logic层返回的响应
-    Json::Value response_root;
-    Json::Reader reader;
-    if (!reader.parse(response_json, response_root)) {
-        LOG_ERROR << "Failed to parse logic response";
-        return -1;
-    }
-    
-    // 直接将logic层的响应转发给客户端
-    string websocket_response = BuildWebSocketFrame(response_json);
-    send(websocket_response);
-    
-    LOG_INFO << "Room history retrieved successfully via logic layer for room: " << roomId;
-    return 0;
+    return ret;
 }
 
 // request format: {"type":"clientCreateRoom","payload":{"roomName":"dpdk"}} 
@@ -583,12 +505,6 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
     string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
     LogicClient logic_client(logic_server_addr);
     string response_json;
-    int ret = logic_client.createRoom(post_data, response_json);
-    
-    if (ret != 0) {
-        LOG_ERROR << "Failed to create room via logic layer";
-        return -1;
-    }
     
     // 解析logic层返回的响应
     Json::Value response_root;

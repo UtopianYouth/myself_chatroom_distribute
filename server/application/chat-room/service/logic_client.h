@@ -48,12 +48,24 @@ public:
 
     /**
      * 处理客户端消息
-     * @param post_data 消息请求数据
+     * @param root WebSocket消息的JSON根对象
+     * @param user_id 用户ID
+     * @param username 用户名
      * @param response 响应数据
      * @return 0成功，非0失败
      */
-    int handleMessages(const string& post_data, string& response);
+    int handleSend(Json::Value& root, int64_t user_id, const string& username, string& response);
 
+    /**
+     * 处理房间历史消息请求（分布式模式）
+     * @param root WebSocket消息的JSON根对象
+     * @param user_id 用户ID
+     * @param username 用户名
+     * @param response 响应数据
+     * @return 0成功，非0失败
+     */
+    int handleRoomHistory(Json::Value& root, int64_t user_id, const string& username, string& response);
+    
     /**
      * 创建房间
      * @param post_data 创建房间请求数据
@@ -62,16 +74,6 @@ public:
      */
     int createRoom(const string& post_data, string& response);
 
-    /**
-     * 获取房间历史消息
-     * @param room_id 房间ID
-     * @param first_message_id 起始消息ID
-     * @param count 消息数量
-     * @param response 响应数据
-     * @return 0成功，非0失败
-     */
-    int getRoomHistory(const string& room_id, const string& first_message_id, 
-                      int count, string& response);
 
     /**
      * 发送HTTP POST请求

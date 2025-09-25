@@ -78,36 +78,125 @@ int LogicClient::registerUser(const string& post_data, string& response) {
     }
 }
 
-int LogicClient::handleMessages(const string& post_data, string& response) {
-    // 构造WebSocket格式的请求
-    Json::Value request;
-    request["type"] = "clientMessages";
-    
-    // 解析传入的post_data
-    Json::Reader reader;
-    Json::Value input_data;
-    if (!reader.parse(post_data, input_data)) {
-        LOG_ERROR << "Failed to parse input post_data";
+int LogicClient::handleSend(Json::Value& root, int64_t user_id, const string& username, string& response) {
+    // 验证payload字段
+    if (!root.isMember("payload") || root["payload"].isNull()) {
+        LOG_ERROR << "Missing payload in clientMessages";
         return -1;
     }
     
-    // 构造payload
-    Json::Value payload;
-    payload["roomId"] = input_data["roomId"];
-    payload["messages"] = input_data["messages"];
+    Json::Value payload = root["payload"];
     
-    request["payload"] = payload;
+    // 验证必要字段
+    if (!payload.isMember("roomId") || !payload.isMember("messages")) {
+        LOG_ERROR << "Missing roomId or messages in payload";
+        return -1;
+    }
+    
+    string room_id = payload["roomId"].asString();
+    Json::Value messages = payload["messages"];
+    
+    Json::Value request_data;
+    request_data["roomId"] = room_id;
+    request_data["userId"] = (Json::Int64)user_id;
+    request_data["username"] = username;
+    request_data["messages"] = messages;
     
     Json::FastWriter writer;
-    string formatted_post_data = writer.write(request);
+    string post_data = writer.write(request_data);
     
-    string url = logic_server_url_ + "/logic/messages";
+    LOG_DEBUG << "Sending to logic layer: " << post_data;
     
-    if (sendHttpRequest(url, formatted_post_data, response)) {
-        return 0; // 成功
-    } else {
-        return -1; // 失败
+    // 调用logic层的send接口
+    string url = logic_server_url_ + "/logic/send";
+    if (!sendHttpRequest(url, post_data, response)) {
+        LOG_ERROR << "Failed to send message to logic layer";
+        return -1;
     }
+    
+    // 解析logic层返回的响应
+    Json::Value response_root;
+    Json::Reader reader;
+    if (!reader.parse(response, response_root)) {
+        LOG_ERROR << "Failed to parse logic response: " << response;
+        return -1;
+    }
+    
+    // 检查logic层是否成功处理
+    if (!response_root.isMember("status") || response_root["status"].asString() != "success") {
+        LOG_ERROR << "Logic layer failed to process message: " << response;
+        return -1;
+    }
+    
+    // logic-> Kafka -> Job -> gRPC -> comet_service.cc -> broadcastRoom
+    LOG_INFO << "Message sent to logic layer successfully, will be broadcasted via Kafka->Job->gRPC";
+
+    return 0;
+}
+
+
+int LogicClient::handleRoomHistory(Json::Value& root, int64_t user_id, const string& username, string& response) {
+    // 验证payload字段
+    if (!root.isMember("payload") || root["payload"].isNull()) {
+        LOG_ERROR << "Missing payload in requestRoomHistory";
+        return -1;
+    }
+    
+    Json::Value payload = root["payload"];
+    
+    // 验证必要字段
+    if (!payload.isMember("roomId") || payload["roomId"].isNull()) {
+        LOG_ERROR << "Missing roomId in requestRoomHistory payload";
+        return -1;
+    }
+    
+    string room_id = payload["roomId"].asString();
+    string first_message_id = payload.get("firstMessageId", "").asString();
+    int count = payload.get("count", 10).asInt();
+    if (count <= 0) count = 10; // 默认值
+    
+    // 构造请求数据，添加用户信息用于权限验证
+    Json::Value request_data;
+    request_data["type"] = "requestRoomHistory";
+    
+    Json::Value request_payload;
+    request_payload["roomId"] = room_id;
+    request_payload["firstMessageId"] = first_message_id;
+    request_payload["count"] = count;
+    request_payload["userId"] = (Json::Int64)user_id;
+    request_payload["username"] = username;
+    
+    request_data["payload"] = request_payload;
+    
+    Json::FastWriter writer;
+    string post_data = writer.write(request_data);
+    
+    LOG_DEBUG << "Sending room history request to logic layer: " << post_data;
+    
+    // 调用logic层的room_history接口（这会触发Kafka消息发送）
+    string url = logic_server_url_ + "/logic/room_history";
+    if (!sendHttpRequest(url, post_data, response)) {
+        LOG_ERROR << "Failed to send room history request to logic layer";
+        return -1;
+    }
+    
+    // 解析logic层返回的响应
+    Json::Value response_root;
+    Json::Reader reader;
+    if (!reader.parse(response, response_root)) {
+        LOG_ERROR << "Failed to parse logic response: " << response;
+        return -1;
+    }
+    
+    // 检查logic层是否成功处理
+    if (!response_root.isMember("status") || response_root["status"].asString() != "success") {
+        LOG_ERROR << "Logic layer failed to process room history request: " << response;
+        return -1;
+    }
+    
+    LOG_INFO << "Room history request sent to logic layer successfully, will be sent via Kafka->Job->gRPC";
+
+    return 0;
 }
 
 int LogicClient::createRoom(const string& post_data, string& response) {
@@ -135,34 +224,6 @@ int LogicClient::createRoom(const string& post_data, string& response) {
     string url = logic_server_url_ + "/logic/room/create";
     
     if (sendHttpRequest(url, formatted_post_data, response)) {
-        return 0; // 成功
-    } else {
-        return -1; // 失败
-    }
-}
-
-int LogicClient::getRoomHistory(const string& room_id, const string& first_message_id, 
-                               int count, string& response) {
-    // 构造WebSocket格式的请求JSON数据
-    Json::Value request;
-    request["type"] = "requestRoomHistory";
-    
-    Json::Value payload;
-    payload["roomId"] = room_id;
-    if (!first_message_id.empty()) {
-        payload["firstMessageId"] = first_message_id;
-    }
-    payload["count"] = count;
-    
-    request["payload"] = payload;
-    
-    Json::FastWriter writer;
-    string post_data = writer.write(request);
-    
-    // 使用POST接口
-    string url = logic_server_url_ + "/logic/room_history";
-    
-    if (sendHttpRequest(url, post_data, response)) {
         return 0; // 成功
     } else {
         return -1; // 失败

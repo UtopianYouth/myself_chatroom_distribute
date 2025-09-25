@@ -22,14 +22,10 @@ public:
     
     const string& getLogicServerUrl() const { return logic_server_url_; }
     
-    /**
-     * 获取连接超时时间（秒）
-     */
+    // 获取连接超时时间（秒）
     int getConnectTimeout() const { return connect_timeout_; }
     
-    /**
-     * 获取请求超时时间（秒）
-     */
+    // 获取请求超时时间（秒）
     int getRequestTimeout() const { return request_timeout_; }
 
 private:

@@ -91,17 +91,17 @@ private:
         else if (msg.find("POST /logic/verify") != string::npos) {
             handleVerifyAuth(conn, msg);
         }
+        else if (msg.find("POST /logic/hello") != string::npos) {
+            handleHello(conn, msg);
+        }
         else if (msg.find("POST /logic/send") != string::npos) {
             handleSend(conn, msg);
-        }
-        else if (msg.find("POST /logic/room/create") != string::npos) {
-            handleCreateRoom(conn, msg);
         }
         else if (msg.find("POST /logic/room_history") != string::npos) {
             handleRoomHistory(conn, msg);
         }
-        else if (msg.find("POST /logic/hello") != string::npos) {
-            handleHello(conn, msg);
+        else if (msg.find("POST /logic/room/create") != string::npos) {
+            handleCreateRoom(conn, msg);
         }
         else {
             // 返回404
@@ -462,7 +462,7 @@ private:
             return;
         }
 
-        // 验证WebSocket消息格式: {"type":"requestRoomHistory","payload":{"roomId":"xxx","firstMessageId":"xxx","count":10}}
+        // 验证WebSocket消息格式: {"type":"requestRoomHistory","payload":{"roomId":"xxx","firstMessageId":"xxx","count":10,"userId":123,"username":"user"}}
         if (!json.isMember("type") || !json.isMember("payload")) {
             LOG_ERROR << "Missing type or payload fields";
             sendErrorResponse(conn, 400, "Missing required fields");
@@ -474,15 +474,17 @@ private:
 
         if (type == "requestRoomHistory") {
             // 验证payload字段
-            if (!payload.isMember("roomId")) {
-                LOG_ERROR << "Missing roomId in payload";
-                sendErrorResponse(conn, 400, "Missing roomId field");
+            if (!payload.isMember("roomId") || !payload.isMember("userId") || !payload.isMember("username")) {
+                LOG_ERROR << "Missing roomId, userId or username in payload";
+                sendErrorResponse(conn, 400, "Missing required fields");
                 return;
             }
 
             string room_id = payload["roomId"].asString();
             string first_message_id = payload.get("firstMessageId", "").asString();
             int count = payload.get("count", 10).asInt();
+            int64_t user_id = payload["userId"].asInt64();
+            string username = payload["username"].asString();
 
             // 调用历史消息获取API（使用单例模式）
             Room room;
@@ -493,46 +495,76 @@ private:
             MessageStorageManager& storage_mgr = MessageStorageManager::getInstance();
             int ret = storage_mgr.getRoomHistory(room, message_batch, count);
             
-            // 构造响应JSON
-            Json::Value response_root;
-            response_root["type"] = "roomHistory";
-            
-            Json::Value payload;
-            payload["roomId"] = room_id;
-            payload["hasMoreMessages"] = message_batch.has_more;
-            
-            Json::Value messages_array(Json::arrayValue);
-            for (const auto& msg : message_batch.messages) {
-                Json::Value message_obj;
-                message_obj["id"] = msg.id;
-                message_obj["content"] = msg.content;
-                message_obj["timestamp"] = (Json::UInt64)msg.timestamp;
-                
-                Json::Value user_obj;
-                user_obj["id"] = (Json::Int64)msg.user_id;
-                user_obj["username"] = msg.username;
-                message_obj["user"] = user_obj;
-                
-                messages_array.append(message_obj);
-            }
-            payload["messages"] = messages_array;
-            response_root["payload"] = payload;
-            
-            Json::FastWriter writer;
-            string response_json = writer.write(response_root);
-            
             if (ret == 0) {
-                // 成功
+                // 构造serverRoomHistory格式的响应（严格按照单机模式的JSON结构）
+                Json::Value response_root;
+                response_root["type"] = "serverRoomHistory";
+                
+                Json::Value response_payload;
+                response_payload["roomId"] = room_id;
+                response_payload["name"] = ""; // 房间名称，如果需要可以从数据库获取
+                response_payload["hasMoreMessages"] = message_batch.has_more;
+                
+                Json::Value messages_array(Json::arrayValue);
+                for (const auto& msg : message_batch.messages) {
+                    Json::Value message_obj;
+                    message_obj["id"] = msg.id;
+                    message_obj["content"] = msg.content;
+                    message_obj["timestamp"] = (Json::UInt64)msg.timestamp;
+                    
+                    Json::Value user_obj;
+                    user_obj["id"] = (Json::Int64)msg.user_id;
+                    user_obj["username"] = msg.username;
+                    message_obj["user"] = user_obj;
+                    
+                    messages_array.append(message_obj);
+                }
+                response_payload["messages"] = messages_array;
+                response_root["payload"] = response_payload;
+                
+                // 创建并填充PushMsg消息（发送给特定用户）
+                ChatRoom::Job::PushMsg pushMsg;
+                pushMsg.set_type(ChatRoom::Job::PushMsg_Type_PUSH);
+                pushMsg.set_operation(6);  // 6 代表房间历史消息响应
+                pushMsg.add_keys(std::to_string(user_id));  // 只发送给请求的用户
+                
+                // 将响应消息序列化
+                Json::FastWriter writer;
+                std::string jsonString = writer.write(response_root);
+                LOG_INFO << "Constructed serverRoomHistory: " << jsonString;
+                pushMsg.set_msg(jsonString);
+                
+                // 序列化protobuf消息
+                std::string serialized_msg;
+                if (!pushMsg.SerializeToString(&serialized_msg)) {
+                    LOG_ERROR << "Failed to serialize room history message";
+                    sendErrorResponse(conn, 500, "Failed to serialize message");
+                    return;
+                }
+                
+                LOG_INFO << "Serialized room history protobuf message length: " << serialized_msg.length();
+                
+                // 发送序列化后的消息到Kafka
+                if (!producer_.sendMessage(serialized_msg)) {
+                    LOG_ERROR << "Failed to send room history message to Kafka";
+                    sendErrorResponse(conn, 500, "Failed to send message to queue");
+                    return;
+                }
+                
+                LOG_INFO << "Room history message sent to Kafka successfully for user: " << user_id;
+                
+                // 返回成功响应给HTTP请求
                 string response = "HTTP/1.1 200 OK\r\n";
                 response += "Content-Type: application/json\r\n";
-                response += "Content-Length: " + std::to_string(response_json.length()) + "\r\n";
+                response += "Content-Length: 25\r\n";
                 response += "Access-Control-Allow-Origin: *\r\n";
                 response += "\r\n";
-                response += response_json;
+                response += "{\"status\": \"success\"}";
                 conn->send(response);
-                LOG_INFO << "Room history retrieved successfully";
+                
             } else {
-                // 失败
+                // 获取历史消息失败
+                LOG_ERROR << "Failed to get room history from storage";
                 sendErrorResponse(conn, 500, "Failed to get room history");
             }
         } else {
@@ -561,7 +593,6 @@ private:
         }
     }
 
-    // 处理 hello 帧
     void handleHello(const TcpConnectionPtr& conn, const string& request) {
         // 解析HTTP请求
         string method, path, body;
@@ -589,7 +620,6 @@ private:
         int64_t user_id = json["userId"].asInt64();
         string username = json["username"].asString();
 
-        // 构造hello响应 - 完全按照单机版格式
         Json::Value root;
         root["type"] = "hello";
 
@@ -667,11 +697,11 @@ private:
         LOG_INFO << "Hello message handled successfully";
     }
 
+private:
     TcpServer server_;
     EventLoop* loop_;
     std::map<string, bool> loggedInUsers_; // 存储已登录用户
-    KafkaProducer producer_;  // 添加 producer 成员变量
-
+    KafkaProducer producer_;  // 添加producer成员变量
 
 };
 
