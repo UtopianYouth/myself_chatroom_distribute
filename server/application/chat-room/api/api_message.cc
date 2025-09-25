@@ -1,4 +1,13 @@
 #include "api_message.h"
+#include "api_common.h"
+#include "api_types.h"
+#include <json/json.h>
+#include <vector>
+#include <string>
+
+using std::string;
+using std::vector;
+using std::pair;
 
 int ApiGetRoomHistory(Room& room, MessageBatch& message_batch, const int msg_count) {
     CacheManager* cache_manager = CacheManager::getInstance();

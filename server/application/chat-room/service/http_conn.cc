@@ -4,8 +4,8 @@
 #include <string.h>
 #include <regex>
 #include "muduo/base/Logging.h" // Logger日志头文件
-#include "api_register.h"
-#include "api_login.h"
+#include "logic_client.h"
+#include "logic_config.h"
 
 
 
@@ -89,7 +89,12 @@ std::string  CHttpConn::getSubdirectoryFromHttpRequest(const std::string& httpRe
 // register 
 int CHttpConn::_HandleRegisterRequest(string& url, string& post_data) {
     string response_json;
-    int ret = ApiRegisterUser(post_data, response_json);
+    
+    // 通过HTTP客户端转发到logic层
+    string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
+    LogicClient logic_client(logic_server_addr);
+    int ret = logic_client.registerUser(post_data, response_json);
+    
     char* http_response_data = new char[HTTP_RESPONSE_JSON_MAX];
     int http_code = 200;
     string http_code_msg;
@@ -125,7 +130,12 @@ int CHttpConn::_HandleRegisterRequest(string& url, string& post_data) {
 // login
 int CHttpConn::_HandleLoginRequest(string& url, string& post_data) {
     string response_json;
-    int ret = ApiLoginUser(post_data, response_json);
+    
+    // 通过HTTP客户端转发到logic层
+    string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
+    LogicClient logic_client(logic_server_addr);
+    int ret = logic_client.loginUser(post_data, response_json);
+    
     char* http_response_data = new char[HTTP_RESPONSE_JSON_MAX];
     int http_code = 200;
     string http_code_msg;

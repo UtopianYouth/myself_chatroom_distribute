@@ -1,7 +1,11 @@
 #include "api_login.h"
+#include "api_common.h"
+#include "muduo/base/Logging.h"
+#include "muduo/base/md5.h"
+#include <json/json.h>
 
 /**
- *
+ * 解析登录JSON请求
  * @return: 0,decode json success; -1,decode json failed
  */
 int DecodeLoginJson(const string& str_json, string& email, string& password) {
@@ -30,9 +34,12 @@ int DecodeLoginJson(const string& str_json, string& email, string& password) {
     return 0;
 }
 
+/**
+ * 编码登录响应JSON
+ */
 int EncodeLoginJson(api_error_id input, string message, string& str_json) {
     Json::Value root;
-    root["id"] = api_error_id_to_string(input);
+    root["id"] = ApiErrorIdToString(input);
     root["message"] = message;
     Json::FastWriter writer;
     str_json = writer.write(root);
@@ -40,13 +47,12 @@ int EncodeLoginJson(api_error_id input, string message, string& str_json) {
 }
 
 /**
- *
+ * 验证用户密码
  * @return: 0,verify success; -1,verify failed
  */
 int VerifyUserPassword(string& email, string& password) {
     int ret = -1;
 
-    // only (email, password) login
     CDBManager* db_manager = CDBManager::getInstance();
     CDBConn* db_conn = db_manager->GetDBConn("chatroom_slave");
     AUTO_REL_DBCONN(db_manager, db_conn);
@@ -56,27 +62,29 @@ int VerifyUserPassword(string& email, string& password) {
         return -1;
     }
 
-    // read password by email
+    // 读取用户密码信息
     string strSql = FormatString("select username, password_hash, salt from users where email='%s'", email.c_str());
     LOG_INFO << "exec: " << strSql;
     CResultSet* result_set = db_conn->ExecuteQuery(strSql.c_str());
+    
     if (result_set && result_set->Next()) {
         string username = result_set->GetString("username");
         string db_password_hash = result_set->GetString("password_hash");
         string salt = result_set->GetString("salt");
+        
+        // 计算客户端密码哈希
         MD5 md5(password + salt);
         string client_password_hash = md5.toString();
+        
         if (db_password_hash == client_password_hash) {
             LOG_INFO << "username: " << username << " verify ok";
             ret = 0;
-        }
-        else {
+        } else {
             LOG_INFO << "username: " << username << " verify failed";
             ret = -1;
         }
-    }
-    else {
-        // database haven't username
+    } else {
+        LOG_WARN << "user not found for email: " << email;
         ret = -1;
     }
 
@@ -88,26 +96,32 @@ int VerifyUserPassword(string& email, string& password) {
 }
 
 /**
+ * 用户登录API
  * @return: 0, login success; -1,login failed
  */
 int ApiLoginUser(string& post_data, string& response_data) {
     string email;
     string password;
 
-    // decode json of login post_data
+    // 解析登录请求JSON
     if (DecodeLoginJson(post_data, email, password) < 0) {
         LOG_ERROR << "decode login json failed";
         EncodeLoginJson(api_error_id::bad_request, "email or password no fill", response_data);
         return -1;
     }
 
+    // 验证用户密码
     int ret = VerifyUserPassword(email, password);
 
     if (ret == 0) {
+        // 登录成功，设置cookie
         ApiSetCookie(email, response_data);
+        LOG_INFO << "user login success, email: " << email;
+    } else {
+        // 登录失败
+        EncodeLoginJson(api_error_id::login_failed, "email password no match", response_data);
+        LOG_WARN << "user login failed, email: " << email;
     }
-    else {
-        EncodeLoginJson(api_error_id::bad_request, "email password no match", response_data);
-    }
+    
     return ret;
 }

@@ -2,8 +2,12 @@
 #define __CHAT_ROOM_API_API_TYPES_H__
 
 #include <unordered_map>
+#include <chrono>
+#include <string>
+#include <vector>
 #include "api_common.h"
 
+using std::string;
 using timestamp_t = std::chrono::system_clock::time_point;
 
 // chat-room info

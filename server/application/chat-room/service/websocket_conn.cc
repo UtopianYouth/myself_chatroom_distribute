@@ -2,11 +2,11 @@
 #include <thread>
 #include<sstream>
 #include "api_types.h"
-#include "api_message.h"
 #include "pub_sub_service.h"
 #include "websocket_conn.h"
-#include "api_room.h"
 #include "base64.h"
+#include "logic_client.h"
+#include "logic_config.h"
 
 typedef struct WebSocketFrame {
     bool fin;
@@ -196,24 +196,28 @@ void CWebSocketConn::OnRead(Buffer* buf) {
                 sid = ExtractSid(Cookie);      // get cookie data
             }
             LOG_DEBUG << "sid: " << sid;
-            int ret = ApiGetUsernameAndUseridByCookie(sid, this->username, this->user_id, email);
-            if (Cookie.empty() || ret < 0) {
-                string reason;
-                if (email.empty()) {
-                    reason = "Cookie validat failed";
-                }
-                else {
-                    // redis validate cookie and get email success, mysql don't get username
-                    reason = "mysql db failed";
-                }
+            
+            // 使用logic层进行用户认证
+            LogicConfig& config = LogicConfig::getInstance();
+            LogicClient logic_client(config.getLogicServerUrl());
+            LogicAuthResult auth_result = logic_client.verifyUserAuth(sid);
+            
+            if (Cookie.empty() || !auth_result.success) {
+                string reason = auth_result.error_message.empty() ? 
+                    "Cookie validation failed" : auth_result.error_message;
 
                 // validation failed, send close websocket frame
-                LOG_WARN << "cookie validation failed, reason: " << reason;
+                LOG_WARN << "cookie validation failed via logic server, reason: " << reason;
                 this->SendCloseFrame(1008, reason);
             }
             else {
+                // 认证成功，设置用户信息
+                this->user_id = auth_result.user_id;
+                this->username = auth_result.username;
+                
                 // get chatrooms that current user join
-                LOG_DEBUG << "cookie validation ok";
+                LOG_DEBUG << "cookie validation ok via logic server, user_id: " << this->user_id 
+                         << ", username: " << this->username;
 
                 s_mtx_user_ws_conn_map.lock();
                 // insert current userid and websocket
@@ -377,239 +381,183 @@ void CWebSocketConn::SendCloseFrame(uint16_t code, const string& reason) {
 }
 
 int CWebSocketConn::SendHelloMessage() {
-    Json::Value root;
-    root["type"] = "hello";
-
-    Json::Value me;
-    me["id"] = static_cast<uint32_t>(this->user_id);
-    me["username"] = this->username;
-
-    Json::Value payload;
-    payload["me"] = me;
-
-    Json::Value rooms;
-    int it_index = 0;
-    for (auto it = this->rooms_map.begin(); it != this->rooms_map.end(); ++it) {
-        Room& room_item = it->second;
-        PubSubService::GetInstance().AddSubscriber(room_item.room_id, this->user_id);
-        string last_message_id;
-        MessageBatch message_batch;
-
-        // get chat-room message
-        int ret = ApiGetRoomHistory(room_item, message_batch);
-        if (ret < 0) {
-            LOG_ERROR << "ApiGetRoomHistory failed";
-            return -1;
-        }
-        LOG_DEBUG << "room: " << room_item.room_name << ", history_last_message_id:" << it->second.history_last_message_id;
-
-        Json::Value  room;
-        room["id"] = room_item.room_id;             // chatroom id
-        room["name"] = room_item.room_name;         // chatroom name
-        room["hasMoreMessages"] = message_batch.has_more;
-
-        Json::Value messages;
-        for (int j = 0; j < message_batch.messages.size(); ++j) {
-            Json::Value message;
-            Json::Value user;
-            message["id"] = message_batch.messages[j].id;
-            message["content"] = message_batch.messages[j].content;
-            user["id"] = (Json::Int64)message_batch.messages[j].user_id;
-            user["username"] = message_batch.messages[j].username;
-            message["user"] = user;
-            message["timestamp"] = (Json::UInt64)message_batch.messages[j].timestamp;
-            messages[j] = message;
-        }
-        if (message_batch.messages.size() > 0) {
-            room["messages"] = messages;
-        }
-        else {
-            // front-end will be error if room["messages"] is nullptr
-            room["messages"] = Json::arrayValue;
-        }
-        rooms[it_index] = room;
-        ++it_index;
-    }
-
-    payload["rooms"] = rooms;
-    root["payload"] = payload;
+    // 通过HTTP客户端调用logic层的hello接口
+    string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
+    LogicClient logic_client(logic_server_addr);
+    
+    // 构造hello请求数据
+    Json::Value hello_request;
+    hello_request["userId"] = (Json::Int64)this->user_id;
+    hello_request["username"] = this->username;
+    
     Json::FastWriter writer;
-    string str_json = writer.write(root);
-
-    LOG_DEBUG << "Serialized JSON: " << str_json;
-
-    // encapsulate websocket frame
-    std::string hello = BuildWebSocketFrame(str_json);
-    send(hello);
+    string post_data = writer.write(hello_request);
+    
+    // 调用logic层的hello接口
+    string response_json;
+    string url = logic_server_addr + "/logic/hello";
+    if (!logic_client.sendHttpRequest(url, post_data, response_json)) {
+        LOG_ERROR << "Failed to call logic hello API";
+        return -1;
+    }
+    
+    // 解析logic层返回的完整hello响应
+    Json::Reader reader;
+    Json::Value logic_response;
+    if (!reader.parse(response_json, logic_response)) {
+        LOG_ERROR << "Failed to parse logic hello response JSON";
+        return -1;
+    }
+    
+    LOG_DEBUG << "Logic hello response: " << response_json;
+    
+    // 为用户订阅所有房间
+    if (logic_response.isMember("payload") && logic_response["payload"].isMember("rooms")) {
+        Json::Value rooms = logic_response["payload"]["rooms"];
+        for (int i = 0; i < rooms.size(); ++i) {
+            Json::Value room = rooms[i];
+            if (room.isMember("id")) {
+                string room_id = room["id"].asString();
+                string room_name = room.get("name", "").asString();
+                
+                // 添加到本地房间映射
+                Room local_room;
+                local_room.room_id = room_id;
+                local_room.room_name = room_name;
+                this->rooms_map[room_id] = local_room;
+                
+                // 订阅房间
+                PubSubService::GetInstance().AddSubscriber(room_id, this->user_id);
+                LOG_DEBUG << "User " << this->user_id << " subscribed to room: " << room_id;
+            }
+        }
+    }
+    
+    // 直接将logic层的响应发送给客户端
+    std::string hello_frame = BuildWebSocketFrame(response_json);
+    send(hello_frame);
+    
+    LOG_INFO << "Hello message sent successfully for user: " << this->user_id;
     return 0;
 }
 
 int CWebSocketConn::HandleClientMessages(Json::Value& root) {
-    string room_id;
-    if (root["payload"].isNull()) {
+    // 验证payload字段
+    if (!root.isMember("payload") || root["payload"].isNull()) {
+        LOG_ERROR << "Missing payload in clientMessages";
         return -1;
     }
+    
     Json::Value payload = root["payload"];
-
-    if (payload["roomId"].isNull()) {
+    
+    // 验证必要字段
+    if (!payload.isMember("roomId") || !payload.isMember("messages")) {
+        LOG_ERROR << "Missing roomId or messages in payload";
         return -1;
     }
-    room_id = payload["roomId"].asString();
-
-    if (payload["messages"].isNull()) {
-        return -1;
-    }
-    Json::Value arrayObj = payload["messages"];
-
-    if (arrayObj.isNull()) {
-        return -1;
-    }
-
-    std::vector<Message> msgs;
-    uint64_t timestamp = getCurrentTimestamp();
-
-    // why many messages?
-    for (int i = 0; i < arrayObj.size(); ++i) {
-        Json::Value message = arrayObj[i];
-        Message msg;
-        msg.content = message["content"].asString();
-        msg.timestamp = timestamp;
-        msg.user_id = this->user_id;
-        msg.username = this->username;
-        msgs.push_back(msg);
-    }
-
-    // store to redis
-    int ret = ApiStoreMessage(room_id, msgs);
-    if (ret < 0) {
-        LOG_ERROR << "ApiStoreMessage() failed";
-        return -1;
-    }
-
-    // json encode
-    root = Json::Value();
-    payload = Json::Value();
-    root["type"] = "serverMessages";
-    payload["roomId"] = room_id;
-    Json::Value messages;
-    for (int i = 0; i < msgs.size();++i) {
-        Json::Value message;
-        Json::Value user;
-        message["id"] = msgs[i].id;
-        message["content"] = msgs[i].content;
-        user["id"] = static_cast<uint32_t>(this->user_id);
-        user["username"] = this->username;
-        message["user"] = user;
-        message["timestamp"] = (Json::UInt64)msgs[i].timestamp;
-        messages[i] = message;
-    }
-
-    if (msgs.size() > 0) {
-        payload["messages"] = messages;
-    }
-    else {
-        // the front-end will be error if payload["messages"] is nullptr
-        payload["messages"] = Json::arrayValue;
-    }
-
-    root["payload"] = payload;
+    
+    string room_id = payload["roomId"].asString();
+    Json::Value messages = payload["messages"];
+    
+    Json::Value request_data;
+    request_data["roomId"] = room_id;
+    request_data["userId"] = (Json::Int64)this->user_id;
+    request_data["username"] = this->username;
+    request_data["messages"] = messages;
+    
     Json::FastWriter writer;
-    string str_json = writer.write(root);
-    LOG_DEBUG << "serverMessages: " << str_json;
-    string response = BuildWebSocketFrame(str_json);
-
-    auto callback = [&response, &room_id, this](const std::unordered_set<int64_t>& user_ids)
-        {
-            LOG_DEBUG << "room_id:" << room_id << ", callback " << ", user_ids.size(): " << user_ids.size();
-            // traverse user_ids, user_ids is from RoomTopic
-            for (int64_t user_id : user_ids) {
-                CHttpConnPtr ws_conn_ptr = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
-                    ws_conn_ptr = s_user_ws_conn_map[user_id];
-
-                }
-                if (ws_conn_ptr) {
-                    ws_conn_ptr->send(response);    // send to other websocket conn
-                }
-                else {
-                    LOG_WARN << "can't find userid: " << user_id;
-                }
-            }
-        };
-
-    PubSubService::GetInstance().PubSubMessage(room_id, callback);
+    string post_data = writer.write(request_data);
+    
+    LOG_DEBUG << "Sending to logic layer: " << post_data;
+    
+    // 转发给logic层
+    string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
+    LogicClient logic_client(logic_server_addr);
+    string response_json;
+    
+    // 调用logic层的send接口（这会触发Kafka消息发送）
+    string url = logic_server_addr + "/logic/send";
+    if (!logic_client.sendHttpRequest(url, post_data, response_json)) {
+        LOG_ERROR << "Failed to send message to logic layer";
+        return -1;
+    }
+    
+    // 解析logic层返回的响应
+    Json::Value response_root;
+    Json::Reader reader;
+    if (!reader.parse(response_json, response_root)) {
+        LOG_ERROR << "Failed to parse logic response: " << response_json;
+        return -1;
+    }
+    
+    // 检查logic层是否成功处理
+    if (!response_root.isMember("status") || response_root["status"].asString() != "success") {
+        LOG_ERROR << "Logic layer failed to process message: " << response_json;
+        return -1;
+    }
+    
+    LOG_INFO << "Message sent to logic layer successfully, will be broadcasted via Kafka->Job->gRPC";
+    
+    // 在分布式模式下，serverMessages响应通过以下流程发送
+    // logic-> Kafka -> Job -> gRPC -> comet_service.cc -> broadcastRoom
 
     return 0;
 }
 
 int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
-    string roomId = root["payload"]["roomId"].asString();
-    string firstMessageId = root["payload"]["firstMessageId"].asString();
-    int count = root["payload"]["count"].asInt();
-    count = 10;
-
-    // get history message from redis
-    Room& room = this->rooms_map[roomId];
-    MessageBatch  message_batch;
-    room.history_last_message_id = firstMessageId;
-
-    LOG_DEBUG << "1  room_id:" << roomId << ", history_last_message_id:" << room.history_last_message_id;
-
-    int ret = ApiGetRoomHistory(room, message_batch);
-    if (ret < 0) {
-        LOG_ERROR << "ApiGetRoomHistory() failed";
+    // 验证payload字段
+    if (!root.isMember("payload") || root["payload"].isNull()) {
+        LOG_ERROR << "Missing payload in requestRoomHistory";
         return -1;
     }
-
-    LOG_DEBUG << "2  room_id:" << roomId << ", history_last_message_id:" << room.history_last_message_id;
-
-    // encapsulate json
-    root = Json::Value();   // clear
-    Json::Value payload;
-
-    root["type"] = "serverRoomHistory";
-    payload["roomId"] = roomId;
-    payload["name"] = room.room_name;
-    payload["hasMoreMessages"] = message_batch.has_more;
-
-    // create json of message array
-    Json::Value messages;
-    for (int j = 0; j < message_batch.messages.size(); j++) {
-        Json::Value  message;
-        Json::Value user;
-        message["id"] = message_batch.messages[j].id;
-        message["content"] = message_batch.messages[j].content;
-        user["id"] = (Json::Int64)message_batch.messages[j].user_id;
-        user["username"] = message_batch.messages[j].username;
-        message["user"] = user;
-        message["timestamp"] = (Json::UInt64)message_batch.messages[j].timestamp;
-        messages.append(message);
+    
+    Json::Value payload = root["payload"];
+    
+    // 验证必要字段
+    if (!payload.isMember("roomId") || payload["roomId"].isNull()) {
+        LOG_ERROR << "Missing roomId in requestRoomHistory payload";
+        return -1;
     }
-
-    if (message_batch.messages.size() > 0) {
-        payload["messages"] = messages;
+    
+    string roomId = payload["roomId"].asString();
+    string firstMessageId = payload.get("firstMessageId", "").asString();
+    int count = payload.get("count", 10).asInt();
+    if (count <= 0) count = 10; // 默认值
+    
+    LOG_INFO << "HandleRequestRoomHistory: roomId=" << roomId 
+             << ", firstMessageId=" << firstMessageId 
+             << ", count=" << count;
+    
+    // 通过HTTP客户端转发到logic层
+    string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
+    LogicClient logic_client(logic_server_addr);
+    string response_json;
+    int ret = logic_client.getRoomHistory(roomId, firstMessageId, count, response_json);
+    
+    if (ret != 0) {
+        LOG_ERROR << "Failed to get room history via logic layer";
+        return -1;
     }
-    else {
-        // front-end will error if payload["meassages"] is nullptr, payload["messages"] = []
-        payload["messages"] = Json::arrayValue;
+    
+    // 解析logic层返回的响应
+    Json::Value response_root;
+    Json::Reader reader;
+    if (!reader.parse(response_json, response_root)) {
+        LOG_ERROR << "Failed to parse logic response";
+        return -1;
     }
-
-    root["payload"] = payload;
-    Json::FastWriter writer;
-    string str_json = writer.write(root);
-    string response = BuildWebSocketFrame(str_json);
-
-    send(response);
-
+    
+    // 直接将logic层的响应转发给客户端
+    string websocket_response = BuildWebSocketFrame(response_json);
+    send(websocket_response);
+    
+    LOG_INFO << "Room history retrieved successfully via logic layer for room: " << roomId;
     return 0;
 }
 
 // request format: {"type":"clientCreateRoom","payload":{"roomName":"dpdk"}} 
 // response format: {"type":"serverCreateRoom","payload":{"roomId":"3bb1b0b6-e91c-11ef-ba07-bd8c0260908d", "roomName":"dpdk"}}
 int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
-    string room_id;
-    string room_name;
     Json::Value payload = root["payload"];
     if (payload.isNull()) {
         LOG_WARN << "payload is null";
@@ -619,31 +567,53 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
         LOG_WARN << "roomName is null";
         return -1;
     }
-    room_name = payload["roomName"].asString();
-
-    // generate room_id
-    room_id = GenerateUUID();
-    LOG_DEBUG << "HandleClientCreateRoom(), room_id:" << room_id << ", room_name:" << room_name;
-
-    // create chatroom and store database
-    string err_msg;
-    bool ret = ApiCreateRoom(room_id, room_name, this->user_id, err_msg);
-    if (!ret) {
-        LOG_ERROR << "ApiCreateRoom failed, err_msg:" << err_msg;
+    
+    string room_name = payload["roomName"].asString();
+    
+    // 构造请求数据发送给logic层
+    Json::Value request_data;
+    request_data["roomName"] = room_name;
+    request_data["creatorId"] = (Json::Int64)this->user_id;
+    request_data["creatorUsername"] = this->username;
+    
+    Json::FastWriter writer;
+    string post_data = writer.write(request_data);
+    
+    // 通过HTTP客户端转发到logic层
+    string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
+    LogicClient logic_client(logic_server_addr);
+    string response_json;
+    int ret = logic_client.createRoom(post_data, response_json);
+    
+    if (ret != 0) {
+        LOG_ERROR << "Failed to create room via logic layer";
         return -1;
     }
-    PubSubService::GetInstance().AddRoomTopic(room_id, room_name, this->user_id);
-
-    // new chatroom add to s_room_list
+    
+    // 解析logic层返回的响应
+    Json::Value response_root;
+    Json::Reader reader;
+    if (!reader.parse(response_json, response_root)) {
+        LOG_ERROR << "Failed to parse logic response";
+        return -1;
+    }
+    
+    // 获取新创建的房间信息
+    string room_id = response_root["payload"]["roomId"].asString();
+    
+    // 在本地添加房间信息（用于PubSub服务）
     Room room;
     room.room_id = room_id;
     room.room_name = room_name;
     room.creator_id = this->user_id;
     room.create_time = getCurrentTimestamp();
+    
+    // 添加到本地房间列表和PubSub服务
+    PubSubService::GetInstance().AddRoomTopic(room_id, room_name, this->user_id);
     PubSubService::GetInstance().AddRoom(room);
-
-    // everyone who logined subscribes this room, front_end will receive this response and subscribe this room
     this->rooms_map[room_id] = room;
+    
+    // 为所有在线用户订阅新房间
     {
         std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
         for (auto it = s_user_ws_conn_map.begin(); it != s_user_ws_conn_map.end(); it++) {
@@ -651,44 +621,9 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
             PubSubService::GetInstance().AddSubscriber(room_id, it->first);
         }
     }
-
-    // broadcast to everyone that server create a new room
-    root = Json::Value();
-    payload = Json::Value();
-    root["type"] = "serverCreateRoom";
-    payload["roomId"] = room_id;
-    payload["roomName"] = room_name;
-    root["payload"] = payload;
-
-    // json to string
-    Json::FastWriter writer;
-    string str_json = writer.write(root);
-
-    LOG_INFO << "serverCreateRoom, str_json: " << str_json;
-    string response = BuildWebSocketFrame(str_json);
-
-    auto callback = [&response, &room_id, &room_name](const std::unordered_set<int64_t>& user_ids)
-        {
-            LOG_INFO << "room_id: " << room_id << ", callback, user_ids.size():" << user_ids.size();
-            for (auto user_id : user_ids) {
-                CHttpConnPtr ws_conn_ptr = nullptr;
-                {
-                    lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
-                    ws_conn_ptr = s_user_ws_conn_map[user_id];
-                }
-                if (ws_conn_ptr) {
-                    ws_conn_ptr->send(response);
-                }
-                else {
-                    LOG_WARN << "cann't find user_id:" << user_id;
-                }
-            }
-        };
-
-
-    PubSubService::GetInstance().PubSubMessage(room_id, callback);
+    
+    LOG_INFO << "Room created successfully via logic layer, room_id: " << room_id;
     return 0;
-
 }
 
 void CWebSocketConn::Disconnect() {

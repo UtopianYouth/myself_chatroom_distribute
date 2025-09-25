@@ -44,3 +44,18 @@ CREATE TABLE IF NOT EXISTS room_member (
     INDEX idx_room_id (room_id),
     INDEX idx_user_id (user_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+DROP TABLE IF EXISTS messages;
+
+CREATE TABLE messages (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    msg_id VARCHAR(64) UNIQUE NOT NULL,
+    room_id VARCHAR(64) NOT NULL,
+    user_id BIGINT NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    msg_content TEXT NOT NULL,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_room_timestamp (room_id),
+    INDEX idx_message_id (msg_id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

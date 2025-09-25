@@ -41,44 +41,40 @@ namespace ChatRoom {
     grpc::Status CometServiceImpl::BroadcastRoom(grpc::ServerContext* context, const Comet::BroadcastRoomReq* request,
         Comet::BroadcastRoomReply* response) {
 
-
         // 获取房间ID和消息内容
         const std::string& room_id = request->roomid();
         const Protocol::Proto& proto = request->proto();
+        const std::string& message_json = proto.body();
+        
         LOG_INFO << "BroadcastRoom called, roomID: " << request->roomid() << " proto: " << proto.body();
+        
         // 使用PubSubService广播到指定房间
         auto& pubsub = PubSubService::GetInstance();
 
-        // bool success = pubsub.PublishToRoom(room_id, proto.body());
-
-        bool success = true;
-        if (!success) {
-            return grpc::Status(grpc::StatusCode::INTERNAL, "Failed to broadcast to room");
-        }
-
+        // proto.body()包含完整的serverMessages格式JSON
         std::string ws_frame = BuildWebSocketFrame(proto.body(), 0x01);
-        auto callback = [&ws_frame, &room_id, this](const std::unordered_set<int64_t> user_ids) {
+        
+        auto callback = [ws_frame, room_id](const std::unordered_set<int64_t>& user_ids) {
             LOG_INFO << "room_id:" << room_id << ", callback " << ", user_ids.size(): " << user_ids.size();
-            for (auto userId : user_ids)
-            {
+            for (int64_t userId : user_ids) {
                 CHttpConnPtr ws_conn_ptr = nullptr;
                 {
-                    std::lock_guard<std::mutex> ulock(s_mtx_user_ws_conn_map); //自动释放
-                    ws_conn_ptr = s_user_ws_conn_map[userId];
+                    std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map); // 自动释放
+                    auto it = s_user_ws_conn_map.find(userId);
+                    if (it != s_user_ws_conn_map.end()) {
+                        ws_conn_ptr = it->second;
+                    }
                 }
                 if (ws_conn_ptr) {
                     ws_conn_ptr->send(ws_frame);
-                }
-                else
-                {
+                    LOG_DEBUG << "Message sent to user: " << userId;
+                } else {
                     LOG_WARN << "can't find userid: " << userId;
                 }
-                /* code */
             }
+        };
 
-            };
-
-        // Broadcast to every websocket conn in room_id
+        // 广播给房间内所有用户
         PubSubService::GetInstance().PubSubMessage(room_id, callback);
 
         return grpc::Status::OK;
@@ -101,4 +97,4 @@ namespace ChatRoom {
         return grpc::Status::OK;
     }
 
-} // namespace ChatRoom 
+} // namespace ChatRoom

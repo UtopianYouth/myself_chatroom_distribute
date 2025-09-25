@@ -1,6 +1,7 @@
 /**
- * 本文件对http解析器的封装
+ * The wrapper of http_parse.h
  */
+
 #ifndef _HTTP_PARSER_WRAPPER_H_
 #define _HTTP_PARSER_WRAPPER_H_
 #include "http_parser.h"

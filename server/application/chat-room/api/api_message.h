@@ -1,5 +1,5 @@
 #ifndef __CHAT_ROOM_API_MESSAGES_H__
-# define __CHAT_ROOM_API_MESSAGES_H__
+#define __CHAT_ROOM_API_MESSAGES_H__
 #include "api_common.h"
 #include "api_types.h"
 

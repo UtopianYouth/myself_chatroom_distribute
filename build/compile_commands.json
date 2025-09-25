@@ -337,6 +337,12 @@
 
 {
   "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+  "command": "/usr/local/gcc-10.5.0/bin/g++   -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Woverloaded-virtual -Wpointer-arith -Wshadow -Wwrite-strings -march=native -std=c++17 -rdynamic -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/mysql/db_pool.cc.o -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql/db_pool.cc",
+  "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql/db_pool.cc"
+},
+
+{
+  "directory": "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
   "command": "/usr/local/gcc-10.5.0/bin/gcc  -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/base -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/api -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/mysql -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis -I/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/service -I/usr/include/mysql -I/usr/include/jsoncpp  -g -O0 -g   -w -o application/chat-room/CMakeFiles/chat-room.dir/redis/async.c.o   -c /home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/async.c",
   "file": "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server/application/chat-room/redis/async.c"
 },

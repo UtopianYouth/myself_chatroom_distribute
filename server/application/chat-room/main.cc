@@ -16,6 +16,7 @@
 #include "http_handler.h"
 #include "pub_sub_service.h"
 #include "api_room.h"
+#include "service/logic_config.h"
 
 #ifdef ENABLE_RPC
 #include <thread>
@@ -169,7 +170,7 @@ private:
                 LOG_INFO << "New connection established, ID: " << conn_id 
                          << ", Total connections: " << this->GetConnectionCount();
             } else {
-                auto conn_id = std::any_cast<int32_t>(conn->getContext());
+                auto conn_id = std::any_cast<uint32_t>(conn->getContext());
                 m_connection_manager->RemoveConnection(conn_id);
                 
                 LOG_INFO << "Connection closed, ID: " << conn_id 
@@ -278,7 +279,7 @@ public:
             }
             Logger::setLogLevel(m_config.log_level);
 
-            if (!InitializeDatabase() || !InitializeCache()) {
+            if (!InitializeDatabase() || !InitializeCache() || !InitializeLogicConfig()) {
                 return -1;
             }
 
@@ -331,6 +332,17 @@ private:
             LOG_ERROR << "Failed to initialize cache manager";
             return false;
         }
+        return true;
+    }
+
+    // init logic config
+    bool InitializeLogicConfig() {
+        LogicConfig& logic_config = LogicConfig::getInstance();
+        if (!logic_config.init(m_config.config_file_path)) {
+            LOG_ERROR << "Failed to initialize logic config";
+            return false;
+        }
+        LOG_INFO << "Logic config initialized successfully";
         return true;
     }
 

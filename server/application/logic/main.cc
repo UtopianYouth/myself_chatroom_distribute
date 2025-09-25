@@ -4,10 +4,19 @@
 #include <functional>
 #include <string>
 #include <map>
+#include <sstream>
 #include <json/json.h>
-#include "kafka_producer.h"
-#include "ChatRoom.Job.pb.h"
-#include "http_parser.h"
+#include "proto/ChatRoom.Job.pb.h"
+#include "service/http_parser.h"
+
+#include "service/kafka_producer.h"
+
+#include "api/api_types.h"
+#include "api/api_login.h"
+#include "api/api_register.h"
+#include "api/api_auth.h"
+#include "api/api_message.h"
+#include "api/api_room.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -32,10 +41,21 @@ public:
         server_.setMessageCallback(
             std::bind(&HttpServer::onMessage, this, _1, _2, _3));
         server_.setThreadNum(1);     
+        
         // 初始化Kafka连接
         if (!producer_.init("localhost:9092", "my-topic")) {
             LOG_ERROR << "Failed to initialize Kafka producer";
         }
+        
+        // 初始化消息存储管理器（单例模式）
+        MessageStorageManager& storage_mgr = MessageStorageManager::getInstance();
+        if (!storage_mgr.init("logic.conf")) {
+            LOG_ERROR << "Failed to initialize MessageStorageManager";
+        } else {
+            LOG_INFO << "MessageStorageManager initialized successfully";
+        }
+        
+
     }
 
     ~HttpServer() {
@@ -65,8 +85,23 @@ private:
         if (msg.find("POST /logic/login") != string::npos) {
             handleLogin(conn, msg);
         }
+        else if (msg.find("POST /logic/register") != string::npos) {
+            handleRegister(conn, msg);
+        }
+        else if (msg.find("POST /logic/verify") != string::npos) {
+            handleVerifyAuth(conn, msg);
+        }
         else if (msg.find("POST /logic/send") != string::npos) {
             handleSend(conn, msg);
+        }
+        else if (msg.find("POST /logic/room/create") != string::npos) {
+            handleCreateRoom(conn, msg);
+        }
+        else if (msg.find("POST /logic/room_history") != string::npos) {
+            handleRoomHistory(conn, msg);
+        }
+        else if (msg.find("POST /logic/hello") != string::npos) {
+            handleHello(conn, msg);
         }
         else {
             // 返回404
@@ -77,11 +112,121 @@ private:
     }
 
     void handleLogin(const TcpConnectionPtr& conn, const string& request) {
-        // 简单的登录处理
-        string response = "HTTP/1.1 200 OK\r\n";
+        // 解析HTTP请求
+        string method, path, body;
+        if (!HttpParser::parseHttpRequest(request, method, path, body)) {
+            LOG_ERROR << "Failed to parse HTTP request";
+            sendErrorResponse(conn, 400, "Bad Request");
+            return;
+        }
+
+        // 调用登录API
+        string response_data;
+        int ret = ApiLoginUser(body, response_data);
+        
+        if (ret == 0) {
+            // 登录成功，返回cookie
+            string response = "HTTP/1.1 200 OK\r\n";
+            response += "Content-Type: application/json\r\n";
+            response += "Set-Cookie: sid=" + response_data + "; HttpOnly; Max-Age=86400; SameSite=Strict\r\n";
+            response += "Content-Length: " + std::to_string(response_data.length()) + "\r\n";
+            response += "Access-Control-Allow-Origin: *\r\n";
+            response += "\r\n";
+            response += response_data;
+            conn->send(response);
+            LOG_INFO << "User login success";
+        } else {
+            // 登录失败
+            string response = "HTTP/1.1 400 Bad Request\r\n";
+            response += "Content-Type: application/json\r\n";
+            response += "Content-Length: " + std::to_string(response_data.length()) + "\r\n";
+            response += "Access-Control-Allow-Origin: *\r\n";
+            response += "\r\n";
+            response += response_data;
+            conn->send(response);
+            LOG_WARN << "User login failed";
+        }
+    }
+
+    void handleRegister(const TcpConnectionPtr& conn, const string& request) {
+        // 解析HTTP请求
+        string method, path, body;
+        if (!HttpParser::parseHttpRequest(request, method, path, body)) {
+            LOG_ERROR << "Failed to parse HTTP request";
+            sendErrorResponse(conn, 400, "Bad Request");
+            return;
+        }
+
+        // 调用注册API
+        string response_data;
+        int ret = ApiRegisterUser(body, response_data);
+        
+        if (ret == 0) {
+            // 注册成功，返回cookie
+            string response = "HTTP/1.1 200 OK\r\n";
+            response += "Content-Type: application/json\r\n";
+            response += "Set-Cookie: sid=" + response_data + "; HttpOnly; Max-Age=86400; SameSite=Strict\r\n";
+            response += "Content-Length: " + std::to_string(response_data.length()) + "\r\n";
+            response += "Access-Control-Allow-Origin: *\r\n";
+            response += "\r\n";
+            response += response_data;
+            conn->send(response);
+            LOG_INFO << "User register success";
+        } else {
+            // 注册失败
+            string response = "HTTP/1.1 400 Bad Request\r\n";
+            response += "Content-Type: application/json\r\n";
+            response += "Content-Length: " + std::to_string(response_data.length()) + "\r\n";
+            response += "Access-Control-Allow-Origin: *\r\n";
+            response += "\r\n";
+            response += response_data;
+            conn->send(response);
+            LOG_WARN << "User register failed";
+        }
+    }
+
+    void handleVerifyAuth(const TcpConnectionPtr& conn, const string& request) {
+        // 解析HTTP请求
+        string method, path, body;
+        if (!HttpParser::parseHttpRequest(request, method, path, body)) {
+            LOG_ERROR << "Failed to parse HTTP request";
+            sendErrorResponse(conn, 400, "Bad Request");
+            return;
+        }
+
+        // 调用认证验证API
+        string response_data;
+        int ret = ApiVerifyAuth(body, response_data);
+        
+        if (ret == 0) {
+            // 验证成功
+            string response = "HTTP/1.1 200 OK\r\n";
+            response += "Content-Type: application/json\r\n";
+            response += "Content-Length: " + std::to_string(response_data.length()) + "\r\n";
+            response += "Access-Control-Allow-Origin: *\r\n";
+            response += "\r\n";
+            response += response_data;
+            conn->send(response);
+            LOG_INFO << "User auth verification success";
+        } else {
+            // 验证失败
+            string response = "HTTP/1.1 401 Unauthorized\r\n";
+            response += "Content-Type: application/json\r\n";
+            response += "Content-Length: " + std::to_string(response_data.length()) + "\r\n";
+            response += "Access-Control-Allow-Origin: *\r\n";
+            response += "\r\n";
+            response += response_data;
+            conn->send(response);
+            LOG_WARN << "User auth verification failed";
+        }
+    }
+
+    void sendErrorResponse(const TcpConnectionPtr& conn, int code, const string& message) {
+        string response = "HTTP/1.1 " + std::to_string(code) + " " + message + "\r\n";
         response += "Content-Type: application/json\r\n";
-        response += "Content-Length: 25\r\n\r\n";
-        response += "{\"status\": \"finished login in\"}\r\n";
+        response += "Content-Length: 0\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "\r\n";
         conn->send(response);
     }
 
@@ -102,7 +247,7 @@ private:
 
         // 验证必要字段
         if (!json.isMember("roomId") || !json.isMember("userId") || 
-            !json.isMember("userName") || !json.isMember("messages")) {
+            !json.isMember("username") || !json.isMember("messages")) {
             LOG_ERROR << "Missing required fields in request";
             return;
         }
@@ -113,7 +258,7 @@ private:
         pushMsg.set_operation(4);  // 4 代表发送消息
         pushMsg.set_room(json["roomId"].asString());
 
-        // 构造新的消息格式
+        // 构造完整的serverMessages格式
         Json::Value messageWrapper;
         messageWrapper["type"] = "serverMessages";
         
@@ -121,7 +266,12 @@ private:
         payload["roomId"] = json["roomId"].asString();
         
         Json::Value messagesArray(Json::arrayValue);
-         // 遍历所有消息，将它们添加到同一个消息数组中
+        
+        // 准备存储到数据库的消息列表
+        std::vector<Message> msgs_to_store;
+        
+        // 遍历所有消息，将它们添加到同一个消息数组中
+        int messageIndex = 0;
         for (const auto& message : json["messages"]) {
             if (!message.isMember("content")) {
                 LOG_ERROR << "Message missing content field";
@@ -130,31 +280,58 @@ private:
 
             Json::Value messageObj;
             // 生成消息ID: 时间戳-索引
-            std::string messageId = std::to_string(Timestamp::now().microSecondsSinceEpoch() / 1000) + "-0";
+            uint64_t timestamp = Timestamp::now().microSecondsSinceEpoch() / 1000;
+            std::string messageId = std::to_string(timestamp) + "-" + std::to_string(messageIndex++);
             messageObj["id"] = messageId;
             messageObj["content"] = message["content"].asString();
             
             Json::Value userObj;
             userObj["id"] = json["userId"].asInt();
-            userObj["username"] = json["userName"].asString();
+            userObj["username"] = json["username"].asString();
             messageObj["user"] = userObj;
             
-            // 设置时间戳（毫秒）
-            messageObj["timestamp"] = (Json::UInt64)(Timestamp::now().microSecondsSinceEpoch() / 1000);
+            // 设置时间戳：ms
+            messageObj["timestamp"] = (Json::UInt64)timestamp;
             
             messagesArray.append(messageObj);
+            
+            // 准备存储到数据库的消息
+            Message msg_to_store;
+            msg_to_store.id = messageId;
+            msg_to_store.content = message["content"].asString();
+            msg_to_store.user_id = json["userId"].asInt64();
+            msg_to_store.username = json["username"].asString();
+            msg_to_store.timestamp = timestamp;
+            msgs_to_store.push_back(msg_to_store);
+        }
+        
+        // 存储消息到Redis和MySQL
+        MessageStorageManager& storage_mgr = MessageStorageManager::getInstance();
+        if (!msgs_to_store.empty()) {
+            int cache_result = storage_mgr.storeMessagesToCache(json["roomId"].asString(),
+             msgs_to_store);
+            bool cache_success = (cache_result == 0);
+            
+            bool db_success = storage_mgr.storeMessagesToDB(json["roomId"].asString(),
+             msgs_to_store);
+            
+            
+            if (!db_success || !cache_success) {
+                //存储失败，仍发送到Kafka
+                LOG_ERROR << "Failed to store messages - DB: " << (db_success ? "OK" : "FAILED") 
+                         << ", Cache: " << (cache_success ? "OK" : "FAILED");
+            } else {
+                LOG_INFO << "Successfully stored " << msgs_to_store.size() << " messages to database and cache";
+            }
         }
 
         payload["messages"] = messagesArray;
         messageWrapper["payload"] = payload;
 
         // 将整个消息对象序列化并设置到protobuf消息中
-         Json::FastWriter writer;
-     
-
-        Json::StreamWriterBuilder writerBuilder;
-        std::string jsonString =  writer.write(messageWrapper); 
-        LOG_INFO << "jsonString: " << jsonString;
+        Json::FastWriter writer;
+        std::string jsonString = writer.write(messageWrapper); 
+        LOG_INFO << "Constructed serverMessages: " << jsonString;
         pushMsg.set_msg(jsonString);
 
         // 序列化protobuf消息
@@ -166,10 +343,11 @@ private:
             response += "Content-Length: 31\r\n\r\n";
             response += "{\"status\": \"send failed\"}\r\n";
             conn->send(response);
-            LOG_ERROR << "Failed to serialize message";
             return;
         }
-        LOG_INFO << "serialized_msg: " << serialized_msg;
+        
+        LOG_INFO << "Serialized protobuf message length: " << serialized_msg.length();
+        
         // 发送序列化后的消息到Kafka
         if (!producer_.sendMessage(serialized_msg)) {
             LOG_ERROR << "Failed to send message to Kafka";
@@ -181,25 +359,320 @@ private:
             return;
         }
 
-        // 发送成功响应
-        string response = "HTTP/1.1 200 OK\r\n";
-        response += "Content-Type: application/json\r\n";
-        response += "Content-Length: 29\r\n\r\n";
-        response += "{\"status\": \"message sent\"}\r\n";
-        LOG_INFO << "send   into";
-
+        // 发送成功响应 - 使用wrapJsonInHttpResponse函数
         std::string jsonStr = "{\"status\": \"success\"}";
         std::string httpResponse = wrapJsonInHttpResponse(jsonStr);
-
+        
         conn->send(httpResponse);
-        LOG_INFO << "handleSend   successfully";
-        conn->shutdown();
+        LOG_INFO << "handleSend completed successfully";
+    }
+
+    void handleCreateRoom(const TcpConnectionPtr& conn, const string& request) {
+        // 解析HTTP请求
+        string method, path, body;
+        if (!HttpParser::parseHttpRequest(request, method, path, body)) {
+            LOG_ERROR << "Failed to parse HTTP request";
+            sendErrorResponse(conn, 400, "Bad Request");
+            return;
+        }
+
+        // 解析JSON body - 按照WebSocket格式解析
+        Json::Value json;
+        if (!HttpParser::parseJsonBody(body, json)) {
+            LOG_ERROR << "Failed to parse JSON body";
+            sendErrorResponse(conn, 400, "Invalid JSON");
+            return;
+        }
+
+        // 验证WebSocket消息格式: {"type":"clientCreateRoom","payload":{"roomName":"xxx"}}
+        if (!json.isMember("type") || !json.isMember("payload")) {
+            LOG_ERROR << "Missing type or payload fields";
+            sendErrorResponse(conn, 400, "Missing required fields");
+            return;
+        }
+
+        string type = json["type"].asString();
+        Json::Value payload = json["payload"];
+
+        if (type == "clientCreateRoom") {
+            // 验证payload字段
+            if (!payload.isMember("roomName")) {
+                LOG_ERROR << "Missing roomName in payload";
+                sendErrorResponse(conn, 400, "Missing roomName field");
+                return;
+            }
+
+            string room_name = payload["roomName"].asString();
+            
+            // 这里需要从认证信息中获取创建者信息
+            // 暂时使用默认值，实际应该从cookie或token中解析
+            int64_t creator_id = 1; // TODO: 从认证信息获取
+            string creator_username = "test_user"; // TODO: 从认证信息获取
+
+            // 调用房间创建API
+            string response_json;
+            // 生成房间ID
+            string room_id = std::to_string(Timestamp::now().microSecondsSinceEpoch());
+            bool ret = ApiCreateRoom(room_id, room_name, creator_id, response_json);
+            
+            if (ret) {
+                // 成功 - 构造成功响应
+                Json::Value success_response;
+                success_response["type"] = "roomCreated";
+                
+                Json::Value payload;
+                payload["roomId"] = room_id;
+                payload["roomName"] = room_name;
+                success_response["payload"] = payload;
+                
+                Json::FastWriter writer;
+                string success_json = writer.write(success_response);
+                
+                string response = "HTTP/1.1 200 OK\r\n";
+                response += "Content-Type: application/json\r\n";
+                response += "Content-Length: " + std::to_string(success_json.length()) + "\r\n";
+                response += "Access-Control-Allow-Origin: *\r\n";
+                response += "\r\n";
+                response += success_json;
+                conn->send(response);
+                LOG_INFO << "Room created successfully";
+            } else {
+                // 失败
+                sendErrorResponse(conn, 500, "Failed to create room: " + response_json);
+            }
+        } else {
+            sendErrorResponse(conn, 400, "Unsupported message type");
+        }
+    }
+
+    void handleRoomHistory(const TcpConnectionPtr& conn, const string& request) {
+        // 解析HTTP请求
+        string method, path, body;
+        if (!HttpParser::parseHttpRequest(request, method, path, body)) {
+            LOG_ERROR << "Failed to parse HTTP request";
+            sendErrorResponse(conn, 400, "Bad Request");
+            return;
+        }
+
+        // 解析JSON body - 按照WebSocket格式解析
+        Json::Value json;
+        if (!HttpParser::parseJsonBody(body, json)) {
+            LOG_ERROR << "Failed to parse JSON body";
+            sendErrorResponse(conn, 400, "Invalid JSON");
+            return;
+        }
+
+        // 验证WebSocket消息格式: {"type":"requestRoomHistory","payload":{"roomId":"xxx","firstMessageId":"xxx","count":10}}
+        if (!json.isMember("type") || !json.isMember("payload")) {
+            LOG_ERROR << "Missing type or payload fields";
+            sendErrorResponse(conn, 400, "Missing required fields");
+            return;
+        }
+
+        string type = json["type"].asString();
+        Json::Value payload = json["payload"];
+
+        if (type == "requestRoomHistory") {
+            // 验证payload字段
+            if (!payload.isMember("roomId")) {
+                LOG_ERROR << "Missing roomId in payload";
+                sendErrorResponse(conn, 400, "Missing roomId field");
+                return;
+            }
+
+            string room_id = payload["roomId"].asString();
+            string first_message_id = payload.get("firstMessageId", "").asString();
+            int count = payload.get("count", 10).asInt();
+
+            // 调用历史消息获取API（使用单例模式）
+            Room room;
+            room.room_id = room_id;
+            room.history_last_message_id = first_message_id;
+            
+            MessageBatch message_batch;
+            MessageStorageManager& storage_mgr = MessageStorageManager::getInstance();
+            int ret = storage_mgr.getRoomHistory(room, message_batch, count);
+            
+            // 构造响应JSON
+            Json::Value response_root;
+            response_root["type"] = "roomHistory";
+            
+            Json::Value payload;
+            payload["roomId"] = room_id;
+            payload["hasMoreMessages"] = message_batch.has_more;
+            
+            Json::Value messages_array(Json::arrayValue);
+            for (const auto& msg : message_batch.messages) {
+                Json::Value message_obj;
+                message_obj["id"] = msg.id;
+                message_obj["content"] = msg.content;
+                message_obj["timestamp"] = (Json::UInt64)msg.timestamp;
+                
+                Json::Value user_obj;
+                user_obj["id"] = (Json::Int64)msg.user_id;
+                user_obj["username"] = msg.username;
+                message_obj["user"] = user_obj;
+                
+                messages_array.append(message_obj);
+            }
+            payload["messages"] = messages_array;
+            response_root["payload"] = payload;
+            
+            Json::FastWriter writer;
+            string response_json = writer.write(response_root);
+            
+            if (ret == 0) {
+                // 成功
+                string response = "HTTP/1.1 200 OK\r\n";
+                response += "Content-Type: application/json\r\n";
+                response += "Content-Length: " + std::to_string(response_json.length()) + "\r\n";
+                response += "Access-Control-Allow-Origin: *\r\n";
+                response += "\r\n";
+                response += response_json;
+                conn->send(response);
+                LOG_INFO << "Room history retrieved successfully";
+            } else {
+                // 失败
+                sendErrorResponse(conn, 500, "Failed to get room history");
+            }
+        } else {
+            sendErrorResponse(conn, 400, "Unsupported message type");
+        }
+    }
+
+    void parseRoomHistoryParams(const string& query, string& room_id, string& first_message_id, int& count) {
+        std::istringstream iss(query);
+        string param;
+        
+        while (std::getline(iss, param, '&')) {
+            size_t eq_pos = param.find('=');
+            if (eq_pos != string::npos) {
+                string key = param.substr(0, eq_pos);
+                string value = param.substr(eq_pos + 1);
+                
+                if (key == "room_id") {
+                    room_id = value;
+                } else if (key == "first_message_id") {
+                    first_message_id = value;
+                } else if (key == "count") {
+                    count = std::stoi(value);
+                }
+            }
+        }
+    }
+
+    // 处理 hello 帧
+    void handleHello(const TcpConnectionPtr& conn, const string& request) {
+        // 解析HTTP请求
+        string method, path, body;
+        if (!HttpParser::parseHttpRequest(request, method, path, body)) {
+            LOG_ERROR << "Failed to parse HTTP request";
+            sendErrorResponse(conn, 400, "Bad Request");
+            return;
+        }
+
+        // 解析JSON body - 获取用户认证信息
+        Json::Value json;
+        if (!HttpParser::parseJsonBody(body, json)) {
+            LOG_ERROR << "Failed to parse JSON body";
+            sendErrorResponse(conn, 400, "Invalid JSON");
+            return;
+        }
+
+        // 验证用户认证信息
+        if (!json.isMember("userId") || !json.isMember("username")) {
+            LOG_ERROR << "Missing userId or username";
+            sendErrorResponse(conn, 400, "Missing user info");
+            return;
+        }
+
+        int64_t user_id = json["userId"].asInt64();
+        string username = json["username"].asString();
+
+        // 构造hello响应 - 完全按照单机版格式
+        Json::Value root;
+        root["type"] = "hello";
+
+        Json::Value me;
+        me["id"] = (Json::Int64)user_id;
+        me["username"] = username;
+
+        Json::Value payload;
+        payload["me"] = me;
+
+        // 获取所有房间信息
+        Json::Value rooms;
+        std::vector<Room> room_list;
+        string error_msg;
+        
+        if (ApiGetAllRooms(room_list, error_msg)) {
+            int it_index = 0;
+            for (const auto& room_item : room_list) {
+                // 为每个房间获取历史消息（使用单例模式）
+                Room room_copy = room_item;
+                MessageBatch message_batch;
+
+                MessageStorageManager& storage_mgr = MessageStorageManager::getInstance();
+                int ret = storage_mgr.getRoomHistory(room_copy, message_batch);
+                if (ret < 0) {
+                    LOG_ERROR << "getRoomHistory failed for room: " << room_item.room_id;
+                    continue;
+                }
+
+                Json::Value room;
+                room["id"] = room_item.room_id;
+                room["name"] = room_item.room_name;
+                room["hasMoreMessages"] = message_batch.has_more;
+
+                Json::Value messages;
+                for (int j = 0; j < message_batch.messages.size(); ++j) {
+                    Json::Value message;
+                    Json::Value user;
+                    message["id"] = message_batch.messages[j].id;
+                    message["content"] = message_batch.messages[j].content;
+                    user["id"] = (Json::Int64)message_batch.messages[j].user_id;
+                    user["username"] = message_batch.messages[j].username;
+                    message["user"] = user;
+                    message["timestamp"] = (Json::UInt64)message_batch.messages[j].timestamp;
+                    messages[j] = message;
+                }
+                
+                if (message_batch.messages.size() > 0) {
+                    room["messages"] = messages;
+                } else {
+                    room["messages"] = Json::arrayValue;
+                }
+                
+                rooms[it_index] = room;
+                ++it_index;
+            }
+        }
+
+        payload["rooms"] = rooms;
+        root["payload"] = payload;
+        
+        Json::FastWriter writer;
+        string response_json = writer.write(root);
+
+        LOG_DEBUG << "Hello response JSON: " << response_json;
+
+        // 发送响应
+        string response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Content-Length: " + std::to_string(response_json.length()) + "\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "\r\n";
+        response += response_json;
+        conn->send(response);
+        LOG_INFO << "Hello message handled successfully";
     }
 
     TcpServer server_;
     EventLoop* loop_;
     std::map<string, bool> loggedInUsers_; // 存储已登录用户
     KafkaProducer producer_;  // 添加 producer 成员变量
+
+
 };
 
 int main() {
@@ -210,6 +683,7 @@ int main() {
     EventLoop loop;
     InetAddress listenAddr(8090);
     HttpServer server(&loop, listenAddr);
+    
     server.start();
     loop.loop();
     return 0;

@@ -2,6 +2,8 @@
 #include <muduo/net/EventLoop.h>
 #include <muduo/base/ThreadPool.h>
 #include <muduo/base/Logging.h>
+#include <thread>
+#include <chrono>
 
 #include <librdkafka/rdkafkacpp.h>
 #include <grpcpp/grpcpp.h>
@@ -17,41 +19,69 @@ using namespace muduo::net;
 // gRPC客户端类
 class CometClient {
 public:
-    CometClient(const std::string& server_address) {
+    CometClient(const std::string& server_address) : server_address_(server_address) {
         auto channel = grpc::CreateChannel(
             server_address, grpc::InsecureChannelCredentials());
         stub_ = ChatRoom::Comet::Comet::NewStub(channel);
     }
 
     bool broadcastRoom(const std::string& roomId, const std::string& msgContent) {
-        // 创建广播请求
-        ChatRoom::Comet::BroadcastRoomReq request;
-        request.set_roomid(roomId); //房间ID
+        const int MAX_RETRIES = 3;
+        
+        for (int retry = 0; retry < MAX_RETRIES; ++retry) {
+            // 创建广播请求
+            ChatRoom::Comet::BroadcastRoomReq request;
+            request.set_roomid(roomId); //房间ID
 
-        // 创建并设置Proto消息
-        ChatRoom::Protocol::Proto *proto = request.mutable_proto();
-        proto->set_ver(1);        // 设置版本号
-        proto->set_op(4);         // 4代表发送消息操作
-        proto->set_seq(0);        // 序列号，可以根据需要设置，用房间作为key, 使用redis 自增
-        proto->set_body(msgContent);  // 设置消息内容
+            // 创建并设置Proto消息
+            ChatRoom::Protocol::Proto *proto = request.mutable_proto();
+            proto->set_ver(1);        // 设置版本号
+            proto->set_op(4);         // 4代表发送消息操作
+            proto->set_seq(0);        // 序列号，可以根据需要设置，用房间作为key, 使用redis 自增
+            proto->set_body(msgContent);  // 设置消息内容
 
-     
+            // 发送gRPC请求
+            ChatRoom::Comet::BroadcastRoomReply response;
+            grpc::ClientContext context;
+            
+            // 设置超时时间
+            auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
+            context.set_deadline(deadline);
 
-        // 发送gRPC请求
-        ChatRoom::Comet::BroadcastRoomReply response;
-        grpc::ClientContext context;
-
-        grpc::Status status = stub_->BroadcastRoom(&context, request, &response);
-        if (!status.ok()) {
-            LOG_ERROR << "RPC failed: " << status.error_message();
-            return false;
+            grpc::Status status = stub_->BroadcastRoom(&context, request, &response);
+            if (status.ok()) {
+                LOG_INFO << "BroadcastRoom success";
+                return true;
+            }
+            
+            LOG_WARN << "RPC failed (attempt " << (retry + 1) << "/" << MAX_RETRIES 
+                     << "): " << status.error_message();
+            
+            // 如果是连接问题，重新创建连接
+            if (status.error_code() == grpc::StatusCode::UNAVAILABLE || 
+                status.error_code() == grpc::StatusCode::CANCELLED) {
+                LOG_INFO << "Recreating gRPC connection...";
+                recreateConnection();
+            }
+            
+            // 重试前等待一小段时间
+            if (retry < MAX_RETRIES - 1) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100 * (retry + 1)));
+            }
         }
-
-        LOG_INFO << "BroadcastRoom success";
-        return true;
+        
+        LOG_ERROR << "RPC failed after " << MAX_RETRIES << " retries";
+        return false;
+    }
+    
+    void recreateConnection() {
+        auto channel = grpc::CreateChannel(
+            server_address_, grpc::InsecureChannelCredentials());
+        stub_ = ChatRoom::Comet::Comet::NewStub(channel);
     }
 
 private:
+    std::string server_address_;
     std::unique_ptr<ChatRoom::Comet::Comet::Stub> stub_;
 };
 
@@ -65,8 +95,10 @@ public:
 
     CometClient* getClient() {
         if (!m_client) {
-            m_client = std::make_unique<CometClient>("localhost:50051");  // chatroom的地址
+            // chatroom address
+            m_client = std::make_unique<CometClient>("127.0.0.1:50051");  
         }
+        
         return m_client.get();
     }
 
@@ -85,8 +117,6 @@ int main() {
         return -1;
     }
 
-    
-
     // 处理消息
     threadPool.run([&]() {
         while (true) {
@@ -99,12 +129,11 @@ int main() {
                     LOG_INFO << "  Operation: " << pushMsg.operation();
                     LOG_INFO << "  roomId: " << pushMsg.room();
                     LOG_INFO << "  msg: " << pushMsg.msg();
-                    // 获取chatroom6的客户端并发送消息
+                    // 获取chatroom的客户端并发送消息
                     auto client = CometManager::getInstance().getClient();
                     if (client) {
                         if (!client->broadcastRoom(pushMsg.room(), pushMsg.msg())) {
-                            LOG_ERROR << "Failed to broadcast message to room: " 
-                                    << pushMsg.room();
+                            LOG_ERROR << "Failed to broadcast message to room: " << pushMsg.room();
                         }
                     } else {
                         LOG_ERROR << "Failed to get comet client";
