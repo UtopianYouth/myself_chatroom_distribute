@@ -1,7 +1,7 @@
 #include "comet_service.h"
 #include "muduo/base/Logging.h"
 #include "websocket_conn.h"
-#include "pub_sub_service.h"
+#include "../service/pub_sub_service.h"
 
 extern std::unordered_map<int64_t, CHttpConnPtr> s_user_ws_conn_map;
 extern std::mutex s_mtx_user_ws_conn_map;
@@ -49,7 +49,7 @@ namespace ChatRoom {
         LOG_INFO << "BroadcastRoom called, roomID: " << request->roomid() << " proto: " << proto.body();
         
         // 使用PubSubService广播到指定房间
-        auto& pubsub = PubSubService::GetInstance();
+        auto& pubsub = PublishSubscribeService::GetInstance();
 
         // proto.body()包含完整的serverMessages格式JSON
         std::string ws_frame = BuildWebSocketFrame(proto.body(), 0x01);
@@ -75,7 +75,7 @@ namespace ChatRoom {
         };
 
         // 广播给房间内所有用户
-        PubSubService::GetInstance().PubSubMessage(room_id, callback);
+        PublishSubscribeService::GetInstance().PubSubMessage(room_id, callback);
 
         return grpc::Status::OK;
     }
@@ -86,7 +86,7 @@ namespace ChatRoom {
         LOG_INFO << "Rooms called";
 
         // 获取所有房间列表
-        auto& pubsub = PubSubService::GetInstance();
+        auto& pubsub = PublishSubscribeService::GetInstance();
         // const auto& rooms = pubsub.GetAllRooms();
 
         // // 填充响应

@@ -96,7 +96,7 @@ int VerifyUserPassword(string& email, string& password) {
 }
 
 /**
- * 用户登录API
+ * 用户登录 API
  * @return: 0, login success; -1,login failed
  */
 int ApiLoginUser(string& post_data, string& response_data) {

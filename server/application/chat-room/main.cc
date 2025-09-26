@@ -14,7 +14,7 @@
 #include "db_pool.h"
 #include "cache_pool.h"
 #include "http_handler.h"
-#include "pub_sub_service.h"
+#include "service/pub_sub_service.h"
 #include "api_room.h"
 #include "service/logic_config.h"
 
@@ -217,42 +217,27 @@ private:
     ThreadPool m_thread_pool;
 };
 
-// Room manager
-class RoomManager {
+// 房间订阅管理器 - 只负责消息推送的订阅管理，不处理房间业务逻辑
+class RoomSubscriptionManager {
 public:
-    static int InitializeRooms() {
-        PubSubService& pubSubService = PubSubService::GetInstance();
-        std::string err_msg;
-
-        // 1. insert default rooms into database if not exists
-        std::vector<Room>& room_list = PubSubService::GetRoomList();
+    /**
+     * 初始化房间订阅 - 从Logic层获取房间列表并设置订阅
+     * 注意：房间的业务逻辑已迁移到Logic层，这里只处理订阅关系
+     */
+    static int InitializeRoomSubscriptions() {
+        PublishSubscribeService& pubSubService = PublishSubscribeService::GetInstance();
+        
+        // 从Logic层获取房间列表（通过HTTP API调用）
+        // 这里暂时使用本地默认房间列表，后续可以改为调用Logic层API
+        std::vector<Room>& room_list = PublishSubscribeService::GetRoomList();
+        
+        // 只设置房间订阅关系，不处理数据库操作
         for (const auto& room : room_list) {
-            string room_id = room.room_id;
-            string existing_room_name;
-            int creator_id;
-            string create_time;
-            string update_time;
-            if (!ApiGetRoomInfo(room_id, existing_room_name, creator_id, create_time, update_time, err_msg)) {
-                if (!ApiCreateRoom(room.room_id, room.room_name, SYSTEM_USER_ID, err_msg)) {
-                    LOG_ERROR << "Failed to create room: " << room.room_id << ", room_name: "
-                        << room.room_name << ", error: " << err_msg;
-                    continue;
-                }
-                LOG_INFO << "Created new room: " << room.room_id << ", room_name: " << room.room_name;
-            }
-        }
-
-        // 2. get all rooms from database
-        std::vector<Room> all_rooms;
-        if (!ApiGetAllRooms(all_rooms, err_msg, "update_time DESC")) {
-            LOG_ERROR << "Failed to get all rooms: " << err_msg;
-            return -1;
-        }
-        for (const auto& room : all_rooms) {
-            PubSubService::AddRoom(room);
             pubSubService.AddRoomTopic(room.room_id, room.room_name, 1);
+            LOG_INFO << "Room subscription initialized: " << room.room_id << ", name: " << room.room_name;
         }
 
+        LOG_INFO << "Room subscription manager initialized, total rooms: " << room_list.size();
         return 0;
     }
 };
@@ -283,8 +268,8 @@ public:
                 return -1;
             }
 
-            if (RoomManager::InitializeRooms() < 0) {
-                LOG_ERROR << "Failed to initialize rooms";
+            if (RoomSubscriptionManager::InitializeRoomSubscriptions() < 0) {
+                LOG_ERROR << "Failed to initialize room subscriptions";
                 return -1;
             }
             return StartServers();

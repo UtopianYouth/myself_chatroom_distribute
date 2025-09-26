@@ -8,15 +8,13 @@
 #include <json/json.h>
 #include "proto/ChatRoom.Job.pb.h"
 #include "service/http_parser.h"
-
 #include "service/kafka_producer.h"
-
 #include "api/api_types.h"
 #include "api/api_login.h"
 #include "api/api_register.h"
 #include "api/api_auth.h"
-#include "api/api_message.h"
-#include "api/api_room.h"
+#include "service/message_service.h"
+#include "service/room_service.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -120,7 +118,6 @@ private:
             return;
         }
 
-        // 调用登录API
         string response_data;
         int ret = ApiLoginUser(body, response_data);
         
@@ -136,7 +133,6 @@ private:
             conn->send(response);
             LOG_INFO << "User login success";
         } else {
-            // 登录失败
             string response = "HTTP/1.1 400 Bad Request\r\n";
             response += "Content-Type: application/json\r\n";
             response += "Content-Length: " + std::to_string(response_data.length()) + "\r\n";
@@ -413,9 +409,15 @@ private:
             string response_json;
             // 生成房间ID
             string room_id = std::to_string(Timestamp::now().microSecondsSinceEpoch());
-            bool ret = ApiCreateRoom(room_id, room_name, creator_id, response_json);
+            RoomService& room_service = RoomService::getInstance();
+            string error_msg;
+            int ret = room_service.createRoom(room_name, creator_id, creator_username, room_id, error_msg);
+            if (ret != 0) {
+                response_json = error_msg;
+            }
+            bool success = (ret == 0);
             
-            if (ret) {
+            if (success) {
                 // 成功 - 构造成功响应
                 Json::Value success_response;
                 success_response["type"] = "roomCreated";
@@ -635,14 +637,14 @@ private:
         std::vector<Room> room_list;
         string error_msg;
         
-        if (ApiGetAllRooms(room_list, error_msg)) {
+        RoomService& room_service = RoomService::getInstance();
+        if (room_service.getAllRoomsFromDB(room_list, error_msg)) {
             int it_index = 0;
             for (const auto& room_item : room_list) {
-                // 为每个房间获取历史消息（使用单例模式）
                 Room room_copy = room_item;
                 MessageBatch message_batch;
-
                 MessageStorageManager& storage_mgr = MessageStorageManager::getInstance();
+
                 int ret = storage_mgr.getRoomHistory(room_copy, message_batch);
                 if (ret < 0) {
                     LOG_ERROR << "getRoomHistory failed for room: " << room_item.room_id;
@@ -708,6 +710,14 @@ private:
 int main() {
     // create kafka instance
     KafkaProducer producer;
+
+    // 初始化房间服务 - 从Comet层迁移的业务逻辑
+    RoomService& room_service = RoomService::getInstance();
+    if (room_service.initialize() < 0) {
+        LOG_ERROR << "Failed to initialize rooms in Logic layer";
+        return -1;
+    }
+    LOG_INFO << "Room service initialized successfully in Logic layer";
 
     LOG_INFO << "HTTP server starting...";
     EventLoop loop;

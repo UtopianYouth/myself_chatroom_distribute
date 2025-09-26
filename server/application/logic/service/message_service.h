@@ -1,11 +1,9 @@
 #ifndef __LOGIC_API_MESSAGES_H__
 #define __LOGIC_API_MESSAGES_H__
-
-#include "api_common.h"
-#include "api_types.h"
-#include "db_pool.h"
 #include <memory>
 #include <mutex>
+#include "../api/api_common.h"
+#include "../api/api_types.h"
 
 // const when compiling
 const constexpr size_t k_message_batch_size = 20;     // the max count of history messages

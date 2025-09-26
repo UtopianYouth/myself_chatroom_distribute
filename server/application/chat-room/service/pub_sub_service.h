@@ -28,21 +28,21 @@ using RoomTopicPtr = std::shared_ptr<RoomTopic>;
 // callback: based on function
 using PubSubCallback = std::function<void(std::unordered_set<int64_t>& user_ids)>;
 
-class PubSubService {
+class PublishSubscribeService {
 private:
     std::mutex room_topic_map_mutex;
     std::unordered_map<string, RoomTopicPtr> room_topic_map;
 
 public:
     // single mode 
-    static PubSubService& GetInstance() {
+    static PublishSubscribeService& GetInstance() {
         // local static func is thread secure for cpp11
-        static PubSubService instance;
+        static PublishSubscribeService instance;
         return instance;
     }
 
-    PubSubService() {}
-    ~PubSubService() {}
+    PublishSubscribeService() {}
+    ~PublishSubscribeService() {}
 
     // create room topic
     bool AddRoomTopic(const string& room_id, const string& room_topic, int64_t creator_id) {
@@ -102,8 +102,12 @@ public:
         }
         callback(user_ids);
     }
+    // 房间列表管理 - 简化版本，只用于订阅管理
     static std::vector<Room>& GetRoomList();
     static int AddRoom(const Room& room);
+    
+    // 注意：房间的业务逻辑（创建、查询、数据库操作）已迁移到Logic层
+    // 这里只保留订阅相关的功能，用于消息推送
 };
 
 #endif

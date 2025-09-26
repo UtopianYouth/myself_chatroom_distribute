@@ -233,7 +233,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
                 s_mtx_user_ws_conn_map.unlock();
 
                 // join the rooms
-                std::vector<Room>& room_list = PubSubService::GetRoomList();    // get all the default chatroom
+                std::vector<Room>& room_list = PublishSubscribeService::GetRoomList();    // get all the default chatroom
                 for (const auto& room : room_list) {
                     this->rooms_map.insert({ room.room_id, room });
                 }
@@ -427,7 +427,7 @@ int CWebSocketConn::SendHelloMessage() {
                 this->rooms_map[room_id] = local_room;
                 
                 // 订阅房间
-                PubSubService::GetInstance().AddSubscriber(room_id, this->user_id);
+                PublishSubscribeService::GetInstance().AddSubscriber(room_id, this->user_id);
                 LOG_DEBUG << "User " << this->user_id << " subscribed to room: " << room_id;
             }
         }
@@ -506,11 +506,24 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
     LogicClient logic_client(logic_server_addr);
     string response_json;
     
+    // 调用logic层的房间创建接口
+    string url = logic_server_addr + "/logic/room/create";
+    if (!logic_client.sendHttpRequest(url, post_data, response_json)) {
+        LOG_ERROR << "Failed to send create room request to logic layer";
+        return -1;
+    }
+    
     // 解析logic层返回的响应
     Json::Value response_root;
     Json::Reader reader;
     if (!reader.parse(response_json, response_root)) {
-        LOG_ERROR << "Failed to parse logic response";
+        LOG_ERROR << "Failed to parse logic response: " << response_json;
+        return -1;
+    }
+    
+    // 检查logic层是否成功处理
+    if (!response_root.isMember("status") || response_root["status"].asString() != "success") {
+        LOG_ERROR << "Logic layer failed to create room: " << response_json;
         return -1;
     }
     
@@ -525,8 +538,8 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
     room.create_time = getCurrentTimestamp();
     
     // 添加到本地房间列表和PubSub服务
-    PubSubService::GetInstance().AddRoomTopic(room_id, room_name, this->user_id);
-    PubSubService::GetInstance().AddRoom(room);
+    PublishSubscribeService::GetInstance().AddRoomTopic(room_id, room_name, this->user_id);
+    PublishSubscribeService::GetInstance().AddRoom(room);
     this->rooms_map[room_id] = room;
     
     // 为所有在线用户订阅新房间
@@ -534,7 +547,7 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
         std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
         for (auto it = s_user_ws_conn_map.begin(); it != s_user_ws_conn_map.end(); it++) {
             LOG_DEBUG << "AddSubscriber(), room_id: " << room_id << ", user_id:" << it->first;
-            PubSubService::GetInstance().AddSubscriber(room_id, it->first);
+            PublishSubscribeService::GetInstance().AddSubscriber(room_id, it->first);
         }
     }
     

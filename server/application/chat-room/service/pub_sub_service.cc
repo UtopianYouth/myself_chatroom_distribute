@@ -1,5 +1,8 @@
 #include "pub_sub_service.h"
 
+// 注意：房间管理的业务逻辑已迁移到Logic层
+// 这里的房间列表仅用于Comet层的订阅管理和消息推送
+// 实际的房间创建、查询、数据库操作都在Logic层处理
 static std::vector<Room> s_room_list = {
     {"0001", "Linux Study Group", 1, "", "", ""},
     {"0002", "C++ Study Group", 2, "", "", ""},
@@ -39,13 +42,13 @@ std::unordered_set<int64_t>& RoomTopic::GetSubscribers() {
     return this->user_ids;
 }
 
-// =============================PubSubService===========================
-std::vector<Room>& PubSubService::GetRoomList() {
+// =============================PublishSubscribeService===========================
+std::vector<Room>& PublishSubscribeService::GetRoomList() {
     std::lock_guard<std::mutex> lock(s_mutex_room_list);
     return s_room_list;
 }
 
-int PubSubService::AddRoom(const Room& room) {
+int PublishSubscribeService::AddRoom(const Room& room) {
     std::lock_guard<std::mutex> lock(s_mutex_room_list);
 
     // check if room exists
