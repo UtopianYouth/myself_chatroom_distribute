@@ -36,7 +36,7 @@ public:
      * @param error_msg 错误信息
      * @return 成功返回0，失败返回-1
      */
-    int createRoom(const string& room_name, int64_t creator_id, 
+    int createRoom(const string& room_name, const string& creator_id, 
                    const string& creator_username, string& room_id, string& error_msg);
 
     /**
@@ -58,7 +58,7 @@ public:
      * @param error_msg 错误信息
      * @return 成功返回true，失败返回false
      */
-    bool getRoomInfoFromDB(const string& room_id, string& room_name, int& creator_id, 
+    bool getRoomInfoFromDB(const string& room_id, string& room_name, string& creator_id, 
                      string& create_time, string& update_time, string& error_msg);
 
     /**
@@ -83,21 +83,21 @@ private:
     RoomService(const RoomService&) = delete;
     RoomService& operator=(const RoomService&) = delete;
 
-    bool dbCreateRoom(const std::string& room_id, const string& room_name, int creator_id, string& error_msg);
-    bool dbGetRoomInfo(const std::string& room_id, string& room_name, int& creator_id, 
+    bool dbCreateRoom(const std::string& room_id, const string& room_name, const string& creator_id, string& error_msg);
+    bool dbGetRoomInfo(const std::string& room_id, string& room_name, string& creator_id, 
                        string& create_time, string& update_time, string& error_msg);
     bool dbGetAllRooms(std::vector<Room>& rooms, string& error_msg, const string& order_by = "update_time DESC");
 
     // 默认房间列表
     std::vector<Room> m_default_rooms = {
-        {"0001", "Linux Study Group", 1, "", "", ""},
-        {"0002", "C++ Study Group", 2, "", "", ""},
-        {"0003", "ThreadPool Study Group", 3, "", "", ""},
-        {"0004", "Database Study Group", 4, "", "", ""},
-        {"0005", "Network Study Group", 5, "", "", ""},
-        {"0006", "Redis Study Group", 6, "", "", ""},
-        {"0007", "Nginx Study Group", 7, "", "", ""},
-        {"0008", "Git Study Group", 8, "", "", ""}
+        {"0001", "Linux Study Group", "1", "", "", ""},
+        {"0002", "C++ Study Group", "1", "", "", ""},
+        {"0003", "ThreadPool Study Group", "1", "", "", ""},
+        {"0004", "Database Study Group", "1", "", "", ""},
+        {"0005", "Network Study Group", "1", "", "", ""},
+        {"0006", "Redis Study Group", "1", "", "", ""},
+        {"0007", "Nginx Study Group", "1", "", "", ""},
+        {"0008", "Git Study Group", "1", "", "", ""}
     };
 
     // 房间列表

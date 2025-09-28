@@ -72,7 +72,7 @@ int RegisterUser(string& username, string& email, string& password, api_error_id
     }
 
     // 检查用户名和邮箱是否已存在
-    string str_sql = FormatString("select id, username, email from users where username='%s' or email = '%s' ",
+    string str_sql = FormatString("select id, username, email from user_infos where username='%s' or email = '%s' ",
         username.c_str(), email.c_str());
     CResultSet* result_set = db_conn->ExecuteQuery(str_sql.c_str());
     
@@ -95,13 +95,17 @@ int RegisterUser(string& username, string& email, string& password, api_error_id
     string password_hash = md5.toString();
     LOG_INFO << "salt: " << salt;
 
+    // 生成用户ID (UUID)
+    string user_id = GenerateUUID();
+    
     // 插入新用户
-    str_sql = "insert into users(`username`, `email`, `password_hash`, `salt`) values(?,?,?,?)";
+    str_sql = "insert into user_infos(`user_id`, `username`, `email`, `password_hash`, `salt`) values(?,?,?,?,?)";
     LOG_INFO << "exec: " << str_sql;
 
     CPrepareStatement* stmt = new CPrepareStatement();
     if (stmt->Init(db_conn->GetMysql(), str_sql)) {
         uint32_t index = 0;
+        stmt->SetParam(index++, user_id);
         stmt->SetParam(index++, username);
         stmt->SetParam(index++, email);
         stmt->SetParam(index++, password_hash);

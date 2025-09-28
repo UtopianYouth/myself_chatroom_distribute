@@ -11,12 +11,13 @@
 #include "muduo/net/EventLoop.h"
 #include "muduo/base/Logging.h"
 #include "config_file_reader.h"
-#include "db_pool.h"
-#include "cache_pool.h"
+
 #include "http_handler.h"
 #include "service/pub_sub_service.h"
 #include "api_room.h"
 #include "service/logic_config.h"
+#include "service/logic_client.h"
+#include <json/json.h>
 
 #ifdef ENABLE_RPC
 #include <thread>
@@ -217,27 +218,65 @@ private:
     ThreadPool m_thread_pool;
 };
 
-// 房间订阅管理器 - 只负责消息推送的订阅管理，不处理房间业务逻辑
+// 房间订阅管理
 class RoomSubscriptionManager {
 public:
-    /**
-     * 初始化房间订阅 - 从Logic层获取房间列表并设置订阅
-     * 注意：房间的业务逻辑已迁移到Logic层，这里只处理订阅关系
-     */
-    static int InitializeRoomSubscriptions() {
-        PublishSubscribeService& pubSubService = PublishSubscribeService::GetInstance();
-        
-        // 从Logic层获取房间列表（通过HTTP API调用）
-        // 这里暂时使用本地默认房间列表，后续可以改为调用Logic层API
-        std::vector<Room>& room_list = PublishSubscribeService::GetRoomList();
-        
-        // 只设置房间订阅关系，不处理数据库操作
-        for (const auto& room : room_list) {
-            pubSubService.AddRoomTopic(room.room_id, room.room_name, 1);
-            LOG_INFO << "Room subscription initialized: " << room.room_id << ", name: " << room.room_name;
-        }
 
-        LOG_INFO << "Room subscription manager initialized, total rooms: " << room_list.size();
+    // 初始化房间订阅
+    static int InitializeRoomSubscriptions() {
+        PubSubService& pubSubService = PubSubService::GetInstance();
+        
+        LogicConfig& logic_config = LogicConfig::getInstance();
+        string logic_server_url = logic_config.getLogicServerUrl();
+        
+        Json::Value request_json;
+        request_json["type"] = "getAllRooms";
+        
+        Json::FastWriter writer;
+        string post_data = writer.write(request_json);
+        
+        // 发送HTTP请求到Logic层
+        LogicClient logic_client(logic_server_url);
+        string response_json;
+        string url = logic_server_url + "/logic/rooms";
+        
+        if (!logic_client.sendHttpRequest(url, post_data, response_json)) {
+            LOG_ERROR << "Failed to get room list from Logic layer";
+            return -1;
+        }
+        
+        // 解析Logic层返回的房间列表
+        Json::Reader reader;
+        Json::Value logic_response;
+        if (!reader.parse(response_json, logic_response)) {
+            LOG_ERROR << "Failed to parse room list response from Logic layer";
+            return -1;
+        }
+        
+
+        if (logic_response.isMember("rooms") && logic_response.isMember("status") && 
+            logic_response["status"].asString() == "success") {
+            Json::Value rooms = logic_response["rooms"];
+            for (int i = 0; i < rooms.size(); ++i) {
+                Json::Value room = rooms[i];
+                if (room.isMember("id") && room.isMember("name")) {
+                    string room_id = room["id"].asString();
+                    string room_name = room["name"].asString();
+                    
+                    pubSubService.AddRoomTopic(room_id, room_name, "1");
+                    LOG_DEBUG << "Room subscription initialized: " << room_id << ", name: " << room_name;
+                }
+            }
+
+            LOG_INFO << "Room subscription manager initialized, total rooms: " << rooms.size();
+
+        } else {
+
+            LOG_WARN << "No rooms found in Logic layer response or request failed";
+            return -1;
+
+        }
+        
         return 0;
     }
 };
@@ -264,7 +303,7 @@ public:
             }
             Logger::setLogLevel(m_config.log_level);
 
-            if (!InitializeDatabase() || !InitializeCache() || !InitializeLogicConfig()) {
+            if (!InitializeLogicConfig()) {
                 return -1;
             }
 
@@ -298,27 +337,7 @@ private:
         signal(SIGPIPE, SIG_IGN);
     }
 
-    // init mysql
-    bool InitializeDatabase() {
-        CDBManager::SetConfPath(m_config.config_file_path.c_str());
-        CDBManager* db_manager = CDBManager::getInstance();
-        if (!db_manager) {
-            LOG_ERROR << "Failed to initialize database manager";
-            return false;
-        }
-        return true;
-    }
 
-    // init redis
-    bool InitializeCache() {
-        CacheManager::SetConfPath(m_config.config_file_path.c_str());
-        CacheManager* cache_manager = CacheManager::getInstance();
-        if (!cache_manager) {
-            LOG_ERROR << "Failed to initialize cache manager";
-            return false;
-        }
-        return true;
-    }
 
     // init logic config
     bool InitializeLogicConfig() {

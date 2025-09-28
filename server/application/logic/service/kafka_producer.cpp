@@ -57,7 +57,7 @@ bool KafkaProducer::init(const std::string& brokers, const std::string& topic) {
 }
 
 bool KafkaProducer::sendMessage(const std::string& message) {
-    LOG_INFO << "Sending message to Kafka: " << message;
+    LOG_INFO << "Sending protobuf message to Kafka (size: " << message.size() << " bytes)";
     if (!is_initialized_) {
         std::cerr << "Kafka producer not initialized" << std::endl;
         return false;

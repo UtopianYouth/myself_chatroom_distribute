@@ -70,45 +70,7 @@ else()
         mysqlclient uuid ssl crypto curl)
 endif()
 
-# 测试程序
-# 设置测试源文件
-set(TEST_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/api_msg_benchmark.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/api_msg_benchmark_init.cc
-    ${BASE_LIST}
-    ${API_LIST}
-    ${MYSQL_LIST}
-    ${REDIS_LIST}
-)
+# 测试程序已移除 - 测试文件不存在
 
-# 添加测试可执行文件
-add_executable(api_msg_benchmark ${TEST_SOURCE_FILES})
 
-# 测试程序链接库
-target_link_libraries(api_msg_benchmark
-    muduo_net
-    muduo_base
-    jsoncpp
-    mysqlclient
-    pthread
-    uuid
-)
 
-add_executable(redis_stream_benchmark test/redis_stream_benchmark.cc  )
-target_link_libraries(redis_stream_benchmark
-    muduo_net
-    muduo_base
-    jsoncpp
-    hiredis
-    pthread
-    uuid
-    event
-)
-
-# # 复制测试配置文件
-# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test/dbserver.conf
-#               ${CMAKE_CURRENT_BINARY_DIR}/dbserver.conf
-#               COPYONLY)
-# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test/redis.conf
-#               ${CMAKE_CURRENT_BINARY_DIR}/redis.conf
-#               COPYONLY)    

@@ -40,8 +40,8 @@ int ApiSetCookie(string email, string& cookie);
 
 string api_error_id_to_string(api_error_id input);
 
-int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int64_t& user_id, string& email);
-int GetUserNameAndUseridByEmail(string& email, string& username, int64_t& user_id);
+int ApiGetUsernameAndUseridByCookie(string cookie, string& username, string& user_id, string& email);
+int GetUserNameAndUseridByEmail(string& email, string& username, string& user_id);
 string GenerateUUID();
 
 #endif

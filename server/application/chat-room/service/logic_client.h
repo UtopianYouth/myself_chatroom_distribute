@@ -9,7 +9,7 @@ using std::string;
 
 struct LogicAuthResult {
     bool success;               // 认证是否成功
-    int64_t user_id;            // 用户ID
+    string user_id;             // 用户ID (UUID)
     string username;            // 用户名
     string email;               // 邮箱
     string error_message;       // 错误信息
@@ -54,7 +54,7 @@ public:
      * @param response 响应数据
      * @return 0成功，非0失败
      */
-    int handleSend(Json::Value& root, int64_t user_id, const string& username, string& response);
+    int handleSend(Json::Value& root, const string& user_id, const string& username, string& response);
 
     /**
      * 处理房间历史消息请求（分布式模式）
@@ -64,16 +64,17 @@ public:
      * @param response 响应数据
      * @return 0成功，非0失败
      */
-    int handleRoomHistory(Json::Value& root, int64_t user_id, const string& username, string& response);
+    int handleRoomHistory(Json::Value& root, const string& user_id, const string& username, string& response);
     
     /**
-     * 创建房间
-     * @param post_data 创建房间请求数据
+     * 处理创建房间请求（分布式模式）
+     * @param root WebSocket消息的JSON根对象
+     * @param user_id 用户ID
+     * @param username 用户名
      * @param response 响应数据
      * @return 0成功，非0失败
      */
-    int createRoom(const string& post_data, string& response);
-
+    int handleCreateRoom(Json::Value& root, const string& user_id, const string& username, string& response);
 
     /**
      * 发送HTTP POST请求

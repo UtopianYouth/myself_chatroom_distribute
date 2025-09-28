@@ -30,7 +30,7 @@ export type LoginRequest = {
 export type LoginResponse = { type: "ok" } | { type: ErrorId.LoginFailed };
 
 export type User = {
-  id: number;
+  id: string;
   username: string;
 };
 

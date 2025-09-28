@@ -2,7 +2,6 @@
 #include "../api/api_common.h"
 #include "../base/config_file_reader.h"
 #include <chrono>
-#include <uuid/uuid.h>
 #include <sstream>
 #include <iomanip>
 #include <numeric>
@@ -55,19 +54,16 @@ string MessageStorageManager::generateMessageId() {
     auto now = std::chrono::system_clock::now();
     auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     
-    uuid_t uuid;
-    uuid_generate_time_safe(uuid);
-    char uuid_str[37];
-    uuid_unparse(uuid, uuid_str);
+    string uuid_str = GenerateUUID();
     
-    return std::to_string(timestamp) + "-" + string(uuid_str);
+    return std::to_string(timestamp) + "-" + uuid_str;
 }
 
 string MessageStorageManager::serializeMessageToJson(const Message& msg) {
     Json::Value root;
     root["content"] = msg.content;
     root["timestamp"] = (Json::UInt64)msg.timestamp;
-    root["user_id"] = (Json::UInt64)msg.user_id;
+    root["user_id"] = msg.user_id;
     root["username"] = msg.username;
     
     Json::FastWriter writer;
@@ -152,7 +148,7 @@ int MessageStorageManager::getRoomHistory(Room& room, MessageBatch& message_batc
             }
             
             msg.content = root["content"].asString();
-            msg.user_id = root["user_id"].asInt64();
+            msg.user_id = root["user_id"].asString();
             msg.username = root["username"].asString();
             msg.timestamp = root["timestamp"].asInt64();
 
@@ -267,7 +263,7 @@ bool MessageStorageManager::storeMessageToDB(const string& room_id, const Messag
         auto conn_guard = [this](CDBConn* conn) { releaseDBConnection(conn); };
         std::unique_ptr<CDBConn, decltype(conn_guard)> conn_ptr(db_conn, conn_guard);
         
-        string sql = "INSERT INTO messages "
+        string sql = "INSERT INTO message_infos "
                      "(`msg_id`, `room_id`, `user_id`, `username`, `msg_content`) "
                      "VALUES (?, ?, ?, ?, ?)";
         CPrepareStatement stmt;
@@ -277,11 +273,10 @@ bool MessageStorageManager::storeMessageToDB(const string& room_id, const Messag
         }
         
         string msg_id = msg.id.empty() ? generateMessageId() : msg.id;
-        uint32_t user_id = static_cast<uint32_t>(msg.user_id);
         
         stmt.SetParam(0, msg_id);
         stmt.SetParam(1, room_id);
-        stmt.SetParam(2, user_id);
+        stmt.SetParam(2, msg.user_id);
         stmt.SetParam(3, msg.username);
         stmt.SetParam(4, msg.content);
         
@@ -323,7 +318,7 @@ bool MessageStorageManager::storeMessagesToDB(const string& room_id, const std::
         std::unique_ptr<CDBConn, decltype(conn_guard)> conn_ptr(db_conn, conn_guard);
         
         string sql = "INSERT INTO " 
-        "messages (`msg_id`, `room_id`, `user_id`, `username`, `msg_content`) VALUES ";
+        "message_infos (`msg_id`, `room_id`, `user_id`, `username`, `msg_content`) VALUES ";
         
         std::vector<string> value_parts;
         for (size_t i = 0; i < messages.size(); ++i) {
@@ -343,21 +338,18 @@ bool MessageStorageManager::storeMessagesToDB(const string& room_id, const std::
         
         // 为需要处理的字段创建副本
         std::vector<string> msg_ids;
-        std::vector<uint32_t> user_ids;
         
         msg_ids.reserve(messages.size());
-        user_ids.reserve(messages.size());
         
         for (const auto& msg : messages) {
             msg_ids.emplace_back(msg.id.empty() ? generateMessageId() : msg.id);
-            user_ids.emplace_back(static_cast<uint32_t>(msg.user_id));
         }
         
         int param_index = 0;
         for (size_t i = 0; i < messages.size(); ++i) {
             stmt.SetParam(param_index++, msg_ids[i]);
             stmt.SetParam(param_index++, room_id);
-            stmt.SetParam(param_index++, user_ids[i]);
+            stmt.SetParam(param_index++, messages[i].user_id);
             stmt.SetParam(param_index++, messages[i].username);
             stmt.SetParam(param_index++, messages[i].content);
         }

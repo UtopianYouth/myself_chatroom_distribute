@@ -13,7 +13,7 @@ using timestamp_t = std::chrono::system_clock::time_point;
 typedef struct _room {
     string room_id;
     string room_name;
-    int creator_id;
+    string creator_id;
     string create_time;
     string update_time;
     string history_last_message_id;     // the start location of history message
@@ -31,7 +31,7 @@ struct Message {
     string username;        // message who send
     string content;         // The actual content of the message
     uint64_t timestamp;     // store seconds
-    int64_t user_id{};      // default user_id = 0
+    string user_id;         // UUID string
 };
 
 // A room history message batch

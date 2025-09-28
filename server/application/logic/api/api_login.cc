@@ -63,7 +63,7 @@ int VerifyUserPassword(string& email, string& password) {
     }
 
     // 读取用户密码信息
-    string strSql = FormatString("select username, password_hash, salt from users where email='%s'", email.c_str());
+    string strSql = FormatString("select user_id, username, password_hash, salt from user_infos where email='%s'", email.c_str());
     LOG_INFO << "exec: " << strSql;
     CResultSet* result_set = db_conn->ExecuteQuery(strSql.c_str());
     

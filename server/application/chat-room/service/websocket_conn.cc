@@ -18,7 +18,7 @@ typedef struct WebSocketFrame {
 }WebSocketFrame;
 
 // 全局变量定义
-std::unordered_map<int64_t, CHttpConnPtr> s_user_ws_conn_map;       // store user id and websocket conn
+std::unordered_map<string, CHttpConnPtr> s_user_ws_conn_map;       // store user id and websocket conn
 std::mutex s_mtx_user_ws_conn_map;
 ThreadPool* CWebSocketConn::s_thread_pool = nullptr;                // thread pool handles for websocket conn
 
@@ -197,7 +197,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
             }
             LOG_DEBUG << "sid: " << sid;
             
-            // 使用logic层进行用户认证
+            // logic层进行用户认证
             LogicConfig& config = LogicConfig::getInstance();
             LogicClient logic_client(config.getLogicServerUrl());
             LogicAuthResult auth_result = logic_client.verifyUserAuth(sid);
@@ -233,7 +233,7 @@ void CWebSocketConn::OnRead(Buffer* buf) {
                 s_mtx_user_ws_conn_map.unlock();
 
                 // join the rooms
-                std::vector<Room>& room_list = PublishSubscribeService::GetRoomList();    // get all the default chatroom
+                std::vector<Room>& room_list = PubSubService::GetRoomList();    // get all the default chatroom
                 for (const auto& room : room_list) {
                     this->rooms_map.insert({ room.room_id, room });
                 }
@@ -381,19 +381,19 @@ void CWebSocketConn::SendCloseFrame(uint16_t code, const string& reason) {
 }
 
 int CWebSocketConn::SendHelloMessage() {
-    // 通过HTTP客户端调用logic层的hello接口
+
+    // 调用 logic 层 hello 接口
     string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
     LogicClient logic_client(logic_server_addr);
     
     // 构造hello请求数据
     Json::Value hello_request;
-    hello_request["userId"] = (Json::Int64)this->user_id;
+    hello_request["userId"] = this->user_id;
     hello_request["username"] = this->username;
     
     Json::FastWriter writer;
     string post_data = writer.write(hello_request);
     
-    // 调用logic层的hello接口
     string response_json;
     string url = logic_server_addr + "/logic/hello";
     if (!logic_client.sendHttpRequest(url, post_data, response_json)) {
@@ -401,7 +401,7 @@ int CWebSocketConn::SendHelloMessage() {
         return -1;
     }
     
-    // 解析logic层返回的完整hello响应
+    // 解析 logic 层返回的 JSON
     Json::Reader reader;
     Json::Value logic_response;
     if (!reader.parse(response_json, logic_response)) {
@@ -427,17 +427,18 @@ int CWebSocketConn::SendHelloMessage() {
                 this->rooms_map[room_id] = local_room;
                 
                 // 订阅房间
-                PublishSubscribeService::GetInstance().AddSubscriber(room_id, this->user_id);
+                PubSubService::GetInstance().AddSubscriber(room_id, this->user_id);
                 LOG_DEBUG << "User " << this->user_id << " subscribed to room: " << room_id;
             }
         }
     }
     
-    // 直接将logic层的响应发送给客户端
+
     std::string hello_frame = BuildWebSocketFrame(response_json);
     send(hello_frame);
     
     LOG_INFO << "Hello message sent successfully for user: " << this->user_id;
+
     return 0;
 }
 
@@ -447,7 +448,7 @@ int CWebSocketConn::HandleClientMessages(Json::Value& root) {
     LogicClient logic_client(logic_server_addr);
     string response_json;
     
-    // 调用logic层的handleSend方法（这会触发Kafka消息发送）
+    // 调用logic层的handleSend
     int ret = logic_client.handleSend(root, this->user_id, this->username, response_json);
     
     if (ret == 0) {
@@ -460,16 +461,22 @@ int CWebSocketConn::HandleClientMessages(Json::Value& root) {
 }
 
 int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
-    // 转发给logic层处理
     string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
     LogicClient logic_client(logic_server_addr);
     string response_json;
     
-    // 调用logic层的handleRoomHistory方法（这会触发Kafka消息发送）
-    int ret = logic_client.handleRoomHistory(root, this->user_id, this->username, response_json);
+    // 调用logic层的handleRoomHistory方法
+    int ret = logic_client.handleRoomHistory(root, this->user_id,
+        this->username, response_json);
     
     if (ret == 0) {
-        LOG_INFO << "Room history request sent to logic layer successfully, will be sent via Kafka->Job->gRPC";
+        LOG_INFO << "Room history request sent to logic layer successfully, response will be sent directly";
+        
+        // 构造WebSocket帧
+        string websocket_frame = BuildWebSocketFrame(response_json);
+        this->send(websocket_frame);
+        
+        LOG_INFO << "Room history WebSocket message sent to client: " << response_json;
     } else {
         LOG_ERROR << "Failed to send room history request to logic layer";
     }
@@ -480,40 +487,22 @@ int CWebSocketConn::HandleRequestRoomHistory(Json::Value& root) {
 // request format: {"type":"clientCreateRoom","payload":{"roomName":"dpdk"}} 
 // response format: {"type":"serverCreateRoom","payload":{"roomId":"3bb1b0b6-e91c-11ef-ba07-bd8c0260908d", "roomName":"dpdk"}}
 int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
-    Json::Value payload = root["payload"];
-    if (payload.isNull()) {
-        LOG_WARN << "payload is null";
-        return -1;
-    }
-    if (payload["roomName"].isNull()) {
-        LOG_WARN << "roomName is null";
-        return -1;
-    }
-    
-    string room_name = payload["roomName"].asString();
-    
-    // 构造请求数据发送给logic层
-    Json::Value request_data;
-    request_data["roomName"] = room_name;
-    request_data["creatorId"] = (Json::Int64)this->user_id;
-    request_data["creatorUsername"] = this->username;
-    
-    Json::FastWriter writer;
-    string post_data = writer.write(request_data);
-    
-    // 通过HTTP客户端转发到logic层
     string logic_server_addr = LogicConfig::getInstance().getLogicServerUrl();
     LogicClient logic_client(logic_server_addr);
     string response_json;
     
-    // 调用logic层的房间创建接口
-    string url = logic_server_addr + "/logic/room/create";
-    if (!logic_client.sendHttpRequest(url, post_data, response_json)) {
+    // 调用logic层handleCreateRoom
+    int ret = logic_client.handleCreateRoom(root, this->user_id,
+        this->username, response_json);
+    
+    if (ret != 0) {
         LOG_ERROR << "Failed to send create room request to logic layer";
         return -1;
     }
     
-    // 解析logic层返回的响应
+    LOG_INFO << "Create room request sent to logic layer successfully";
+    
+    // 解析logic层返回的响应以获取房间信息
     Json::Value response_root;
     Json::Reader reader;
     if (!reader.parse(response_json, response_root)) {
@@ -521,37 +510,24 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
         return -1;
     }
     
-    // 检查logic层是否成功处理
-    if (!response_root.isMember("status") || response_root["status"].asString() != "success") {
-        LOG_ERROR << "Logic layer failed to create room: " << response_json;
+    // 验证响应格式并获取房间信息
+    if (!response_root.isMember("type") || response_root["type"].asString() != "serverCreateRoom" ||
+        !response_root.isMember("payload") || response_root["payload"].isNull()) {
+        LOG_ERROR << "Logic layer returned unexpected response format: " << response_json;
+        return -1;
+    }
+    
+    Json::Value payload = response_root["payload"];
+    if (!payload.isMember("roomId") || !payload.isMember("roomName")) {
+        LOG_ERROR << "Missing roomId or roomName in logic response: " << response_json;
         return -1;
     }
     
     // 获取新创建的房间信息
-    string room_id = response_root["payload"]["roomId"].asString();
+    string room_id = payload["roomId"].asString();
+    string room_name = payload["roomName"].asString();
     
-    // 在本地添加房间信息（用于PubSub服务）
-    Room room;
-    room.room_id = room_id;
-    room.room_name = room_name;
-    room.creator_id = this->user_id;
-    room.create_time = getCurrentTimestamp();
-    
-    // 添加到本地房间列表和PubSub服务
-    PublishSubscribeService::GetInstance().AddRoomTopic(room_id, room_name, this->user_id);
-    PublishSubscribeService::GetInstance().AddRoom(room);
-    this->rooms_map[room_id] = room;
-    
-    // 为所有在线用户订阅新房间
-    {
-        std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
-        for (auto it = s_user_ws_conn_map.begin(); it != s_user_ws_conn_map.end(); it++) {
-            LOG_DEBUG << "AddSubscriber(), room_id: " << room_id << ", user_id:" << it->first;
-            PublishSubscribeService::GetInstance().AddSubscriber(room_id, it->first);
-        }
-    }
-    
-    LOG_INFO << "Room created successfully via logic layer, room_id: " << room_id;
+    LOG_INFO << "Room created successfully: " << room_id << " (" << room_name << ")";
     return 0;
 }
 

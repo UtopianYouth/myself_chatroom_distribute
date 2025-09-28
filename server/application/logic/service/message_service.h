@@ -6,7 +6,7 @@
 #include "../api/api_types.h"
 
 // const when compiling
-const constexpr size_t k_message_batch_size = 20;     // the max count of history messages
+const constexpr size_t k_message_batch_size = 10;     // the max count of history messages
 
 // 消息存储管理类
 class MessageStorageManager {

@@ -51,7 +51,7 @@ int ApiGetRoomHistory(Room& room, MessageBatch& message_batch, const int msg_cou
                 LOG_ERROR << "user_id null";
                 return -1;
             }
-            msg.user_id = root["user_id"].asInt64();
+            msg.user_id = root["user_id"].asString();
 
             if (root["username"].isNull()) {
                 LOG_ERROR << "username null";
@@ -124,7 +124,7 @@ string SerializeMessageToJson(const Message& msg) {
     root["content"] = msg.content;
     // 添加时间戳到JSON根节点，并转换为Json::UInt64类型
     root["timestamp"] = (Json::UInt64)msg.timestamp;
-    root["user_id"] = (Json::UInt64)msg.user_id;
+    root["user_id"] = msg.user_id;
     root["username"] = msg.username;
     Json::FastWriter writer;
 

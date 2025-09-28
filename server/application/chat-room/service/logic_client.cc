@@ -29,7 +29,7 @@ LogicClient::~LogicClient() {
 LogicAuthResult LogicClient::verifyUserAuth(const string& cookie) {
     LogicAuthResult result;
     result.success = false;
-    result.user_id = 0;
+    result.user_id = "";
 
     if (cookie.empty()) {
         result.error_message = "Cookie is empty";
@@ -78,7 +78,7 @@ int LogicClient::registerUser(const string& post_data, string& response) {
     }
 }
 
-int LogicClient::handleSend(Json::Value& root, int64_t user_id, const string& username, string& response) {
+int LogicClient::handleSend(Json::Value& root, const string& user_id, const string& username, string& response) {
     // 验证payload字段
     if (!root.isMember("payload") || root["payload"].isNull()) {
         LOG_ERROR << "Missing payload in clientMessages";
@@ -98,7 +98,7 @@ int LogicClient::handleSend(Json::Value& root, int64_t user_id, const string& us
     
     Json::Value request_data;
     request_data["roomId"] = room_id;
-    request_data["userId"] = (Json::Int64)user_id;
+    request_data["userId"] = user_id;
     request_data["username"] = username;
     request_data["messages"] = messages;
     
@@ -135,7 +135,7 @@ int LogicClient::handleSend(Json::Value& root, int64_t user_id, const string& us
 }
 
 
-int LogicClient::handleRoomHistory(Json::Value& root, int64_t user_id, const string& username, string& response) {
+int LogicClient::handleRoomHistory(Json::Value& root, const string& user_id, const string& username, string& response) {
     // 验证payload字段
     if (!root.isMember("payload") || root["payload"].isNull()) {
         LOG_ERROR << "Missing payload in requestRoomHistory";
@@ -163,7 +163,7 @@ int LogicClient::handleRoomHistory(Json::Value& root, int64_t user_id, const str
     request_payload["roomId"] = room_id;
     request_payload["firstMessageId"] = first_message_id;
     request_payload["count"] = count;
-    request_payload["userId"] = (Json::Int64)user_id;
+    request_payload["userId"] = user_id;
     request_payload["username"] = username;
     
     request_data["payload"] = request_payload;
@@ -173,14 +173,13 @@ int LogicClient::handleRoomHistory(Json::Value& root, int64_t user_id, const str
     
     LOG_DEBUG << "Sending room history request to logic layer: " << post_data;
     
-    // 调用logic层的room_history接口（这会触发Kafka消息发送）
+    // 调用logic层的room_history接口
     string url = logic_server_url_ + "/logic/room_history";
     if (!sendHttpRequest(url, post_data, response)) {
         LOG_ERROR << "Failed to send room history request to logic layer";
         return -1;
     }
     
-    // 解析logic层返回的响应
     Json::Value response_root;
     Json::Reader reader;
     if (!reader.parse(response, response_root)) {
@@ -188,45 +187,71 @@ int LogicClient::handleRoomHistory(Json::Value& root, int64_t user_id, const str
         return -1;
     }
     
-    // 检查logic层是否成功处理
-    if (!response_root.isMember("status") || response_root["status"].asString() != "success") {
-        LOG_ERROR << "Logic layer failed to process room history request: " << response;
+    // 检查WebSocket格式响应
+    if (response_root.isMember("type") && response_root["type"].asString() == "serverRoomHistory") {
+        // 直接返回WebSocket格式的响应给调用方
+        LOG_INFO << "Room history request processed successfully by logic layer";
+        return 0;
+    } else {
+        LOG_ERROR << "Logic layer returned unexpected response format: " << response;
         return -1;
     }
-    
-    LOG_INFO << "Room history request sent to logic layer successfully, will be sent via Kafka->Job->gRPC";
-
-    return 0;
 }
 
-int LogicClient::createRoom(const string& post_data, string& response) {
-    // 构造WebSocket格式的请求
-    Json::Value request;
-    request["type"] = "clientCreateRoom";
-    
-    // 解析传入的post_data
-    Json::Reader reader;
-    Json::Value input_data;
-    if (!reader.parse(post_data, input_data)) {
-        LOG_ERROR << "Failed to parse input post_data";
+int LogicClient::handleCreateRoom(Json::Value& root, const string& user_id, const string& username, string& response) {
+    // 验证payload字段
+    if (!root.isMember("payload") || root["payload"].isNull()) {
+        LOG_ERROR << "Missing payload in clientCreateRoom";
         return -1;
     }
     
-    // 构造payload
-    Json::Value payload;
-    payload["roomName"] = input_data["roomName"];
+    Json::Value payload = root["payload"];
     
-    request["payload"] = payload;
+    // 验证必要字段
+    if (!payload.isMember("roomName") || payload["roomName"].isNull()) {
+        LOG_ERROR << "Missing roomName in clientCreateRoom payload";
+        return -1;
+    }
+    
+    string room_name = payload["roomName"].asString();
+    
+    // 构造请求数据，添加用户信息
+    Json::Value request_data;
+    request_data["type"] = "clientCreateRoom";
+    
+    Json::Value request_payload;
+    request_payload["roomName"] = room_name;
+    request_payload["creatorId"] = user_id;
+    request_payload["creatorUsername"] = username;
+    
+    request_data["payload"] = request_payload;
     
     Json::FastWriter writer;
-    string formatted_post_data = writer.write(request);
+    string post_data = writer.write(request_data);
     
+    LOG_DEBUG << "Sending create room request to logic layer: " << post_data;
+    
+    // 调用logic层的room/create接口
     string url = logic_server_url_ + "/logic/room/create";
+    if (!sendHttpRequest(url, post_data, response)) {
+        LOG_ERROR << "Failed to send create room request to logic layer";
+        return -1;
+    }
     
-    if (sendHttpRequest(url, formatted_post_data, response)) {
-        return 0; // 成功
+    // 验证响应格式
+    Json::Value response_root;
+    Json::Reader reader;
+    if (!reader.parse(response, response_root)) {
+        LOG_ERROR << "Failed to parse logic response: " << response;
+        return -1;
+    }
+    
+    if (response_root.isMember("type") && response_root["type"].asString() == "serverCreateRoom") {
+        LOG_INFO << "Create room request processed successfully by logic layer";
+        return 0;
     } else {
-        return -1; // 失败
+        LOG_ERROR << "Logic layer returned unexpected response format: " << response;
+        return -1;
     }
 }
 
@@ -283,7 +308,7 @@ bool LogicClient::sendHttpRequest(const string& url, const string& post_data, st
 LogicAuthResult LogicClient::parseAuthResponse(const string& response_json) {
     LogicAuthResult result;
     result.success = false;
-    result.user_id = 0;
+    result.user_id = "";
 
     Json::Value root;
     Json::Reader reader;
@@ -296,7 +321,7 @@ LogicAuthResult LogicClient::parseAuthResponse(const string& response_json) {
 
     if (root["success"].isBool() && root["success"].asBool()) {
         result.success = true;
-        result.user_id = root["user_id"].asInt64();
+        result.user_id = root["user_id"].asString();
         result.username = root["username"].asString();
         result.email = root["email"].asString();
         LOG_INFO << "User auth success via logic server, user_id: " << result.user_id 

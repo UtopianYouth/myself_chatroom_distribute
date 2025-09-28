@@ -1,8 +1,8 @@
 #include "room_service.h"
 #include "../base/config_file_reader.h"
 #include "../mysql/db_pool.h"
+#include "../api/api_common.h"
 #include "muduo/base/Logging.h"
-#include <uuid/uuid.h>
 #include <sstream>
 
 using namespace muduo;
@@ -15,7 +15,7 @@ int RoomService::initialize() {
     for (const Room& room : m_default_rooms) {
         string room_id = room.room_id;
         string existing_room_name;
-        int creator_id;
+        string creator_id;
         string create_time;
         string update_time;
         
@@ -24,7 +24,7 @@ int RoomService::initialize() {
              create_time, update_time, err_msg)) {
 
             if (!dbCreateRoom(room.room_id, room.room_name,
-                 SYSTEM_USER_ID, err_msg)) {
+                 "1", err_msg)) {
                 LOG_ERROR << "Failed to create default room: " << room.room_id 
                          << ", room_name: " << room.room_name << ", error: " << err_msg;
                 continue;
@@ -44,16 +44,12 @@ int RoomService::initialize() {
     return 0;
 }
 
-int RoomService::createRoom(const string& room_name, int64_t creator_id, 
+int RoomService::createRoom(const string& room_name, const string& creator_id, 
                            const string& creator_username, string& room_id, string& error_msg) {
     // 生成UUID作为房间ID
-    uuid_t uuid;
-    char uuid_str[37];
-    uuid_generate(uuid);
-    uuid_unparse(uuid, uuid_str);
-    room_id = string(uuid_str);
+    room_id = GenerateUUID();
 
-    if (!dbCreateRoom(room_id, room_name, static_cast<int>(creator_id), error_msg)) {
+    if (!dbCreateRoom(room_id, room_name, creator_id, error_msg)) {
         LOG_ERROR << "Failed to create room in database: " << error_msg;
         return -1;
     }
@@ -73,7 +69,7 @@ int RoomService::createRoom(const string& room_name, int64_t creator_id,
     return 0;
 }
 
-bool RoomService::getRoomInfoFromDB(const string& room_id, string& room_name, int& creator_id, 
+bool RoomService::getRoomInfoFromDB(const string& room_id, string& room_name, string& creator_id, 
                              string& create_time, string& update_time, string& error_msg) {
     return dbGetRoomInfo(room_id, room_name, creator_id, create_time, update_time, error_msg);
 }
@@ -123,10 +119,8 @@ int RoomService::refreshRoomList() {
 }
 
 
-
-
 // ======================PRIVATE=======================
-bool RoomService::dbCreateRoom(const std::string& room_id, const string& room_name, int creator_id,
+bool RoomService::dbCreateRoom(const std::string& room_id, const string& room_name, const string& creator_id,
     string& error_msg) {
     CDBManager* db_manager = CDBManager::getInstance();
     if (!db_manager) {
@@ -142,10 +136,10 @@ bool RoomService::dbCreateRoom(const std::string& room_id, const string& room_na
     AUTO_REL_DBCONN(db_manager, db_conn);
 
     std::stringstream ss;
-    ss << "INSERT INTO room_info (room_id, room_name, creator_id) VALUES ('"
+    ss << "INSERT INTO room_infos (room_id, room_name, creator_id) VALUES ('"
         << room_id << "', '"
-        << room_name << "', "
-        << creator_id << ")";
+        << room_name << "', '"
+        << creator_id << "')";
 
     if (!db_conn->ExecuteUpdate(ss.str().c_str(), true)) {
         error_msg = "Failed to execute room creation SQL";
@@ -155,7 +149,7 @@ bool RoomService::dbCreateRoom(const std::string& room_id, const string& room_na
     return true;
 }
 
-bool RoomService::dbGetRoomInfo(const std::string& room_id, string& room_name, int& creator_id, 
+bool RoomService::dbGetRoomInfo(const std::string& room_id, string& room_name, string& creator_id, 
                                string& create_time, string& update_time, string& error_msg) {
     CDBManager* db_manager = CDBManager::getInstance();
     if (!db_manager) {
@@ -171,7 +165,7 @@ bool RoomService::dbGetRoomInfo(const std::string& room_id, string& room_name, i
     AUTO_REL_DBCONN(db_manager, db_conn);
 
     std::stringstream ss;
-    ss << "SELECT room_name, creator_id, create_time, update_time FROM room_info WHERE room_id = '" << room_id << "'";
+    ss << "SELECT room_name, creator_id, create_time, update_time FROM room_infos WHERE room_id = '" << room_id << "'";
     CResultSet* res_set = db_conn->ExecuteQuery(ss.str().c_str());
 
     if (!res_set) {
@@ -181,7 +175,7 @@ bool RoomService::dbGetRoomInfo(const std::string& room_id, string& room_name, i
 
     if (res_set->Next()) {
         room_name = res_set->GetString("room_name");
-        creator_id = res_set->GetInt("creator_id");
+        creator_id = res_set->GetString("creator_id");
         create_time = res_set->GetString("create_time");
         update_time = res_set->GetString("update_time");
         delete res_set;
@@ -208,7 +202,7 @@ bool RoomService::dbGetAllRooms(std::vector<Room>& rooms, string& error_msg, con
     AUTO_REL_DBCONN(db_manager, db_conn);
 
     std::stringstream ss;
-    ss << "SELECT room_id, room_name, creator_id, create_time, update_time FROM room_info ORDER BY " << order_by;
+    ss << "SELECT room_id, room_name, creator_id, create_time, update_time FROM room_infos ORDER BY " << order_by;
     CResultSet* res_set = db_conn->ExecuteQuery(ss.str().c_str());
 
     if (!res_set) {
@@ -221,7 +215,7 @@ bool RoomService::dbGetAllRooms(std::vector<Room>& rooms, string& error_msg, con
         Room room;
         room.room_id = res_set->GetString("room_id");
         room.room_name = res_set->GetString("room_name");
-        room.creator_id = res_set->GetInt("creator_id");
+        room.creator_id = res_set->GetString("creator_id");
         room.create_time = res_set->GetString("create_time");
         room.update_time = res_set->GetString("update_time");
         rooms.push_back(room);

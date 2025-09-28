@@ -81,7 +81,7 @@ string ApiErrorIdToString(api_error_id input) {
 /**
  * query redis
  */
-int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int64_t& userid, string& email) {
+int ApiGetUsernameAndUseridByCookie(string cookie, string& username, string& userid, string& email) {
     int ret = 0;
     CacheManager* cache_manager = CacheManager::getInstance();
     CacheConn* cache_conn = cache_manager->GetCacheConn("token");
@@ -105,19 +105,19 @@ int ApiGetUsernameAndUseridByCookie(string cookie, string& username, int64_t& us
 /**
  * query mysql
  */
-int GetUserNameAndUseridByEmail(string& email, string& username, int64_t& userid) {
+int GetUserNameAndUseridByEmail(string& email, string& username, string& userid) {
     int ret = 0;
     CDBManager* db_manager = CDBManager::getInstance();
     CDBConn* db_conn = db_manager->GetDBConn("chatroom_slave");
     AUTO_REL_DBCONN(db_manager, db_conn);
 
     // get user id and username
-    string strSql = FormatString("select id, username from users where email='%s'", email.c_str());
+    string strSql = FormatString("select user_id, username from user_infos where email='%s'", email.c_str());
     CResultSet* result_set = db_conn->ExecuteQuery(strSql.c_str());
 
     if (result_set && result_set->Next()) {
         username = result_set->GetString("username");
-        userid = result_set->GetInt("id");
+        userid = result_set->GetString("user_id");
 
         LOG_DEBUG << "username: " << username;
         ret = 0;

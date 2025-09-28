@@ -6,17 +6,10 @@ if(ENABLE_RPC)
     add_definitions(-DENABLE_RPC)
 endif()
 
-
-# cpp server
+# cpp server components
 add_subdirectory(chat-room)
 
 if(ENABLE_RPC)
     add_subdirectory(logic)
     add_subdirectory(job)
 endif()
-
-# cpp client
-add_subdirectory(client)
-
-# cpp client performance test
-add_subdirectory(client_perf)

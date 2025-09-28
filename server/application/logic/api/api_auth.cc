@@ -8,7 +8,7 @@
 AuthResult ApiVerifyUserByCookie(const string& cookie) {
     AuthResult result;
     result.success = false;
-    result.user_id = 0;
+    result.user_id = "";
     
     if (cookie.empty()) {
         result.error_message = "Cookie is empty";
@@ -17,7 +17,7 @@ AuthResult ApiVerifyUserByCookie(const string& cookie) {
     
     // 调用现有的cookie验证函数
     string username, email;
-    int64_t user_id;
+    string user_id;
     int ret = ApiGetUsernameAndUseridByCookie(cookie, username, user_id, email);
     
     if (ret == 0) {
@@ -42,7 +42,7 @@ void EncodeAuthResultJson(const AuthResult& result, string& json_str) {
     root["success"] = result.success;
     
     if (result.success) {
-        root["user_id"] = (Json::UInt64)result.user_id;
+        root["user_id"] = result.user_id;
         root["username"] = result.username;
         root["email"] = result.email;
     } else {

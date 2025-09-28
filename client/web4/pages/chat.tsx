@@ -81,11 +81,11 @@ const Message = ({
   timestamp,
   currentUserId,
 }: {
-  userId: number;
+  userId: string;
   username: string;
   content: string;
   timestamp: number;
-  currentUserId: number;
+  currentUserId: string;
 }) => {
   if (userId === currentUserId) {
     return <MyMessage  content={content} timestamp={timestamp} />;
@@ -234,7 +234,7 @@ export const ChatScreen = ({
 }: {
   rooms: Room[];
   currentRoom: Room | null;
-  currentUserId: number;
+  currentUserId: string;
   onClickRoom: (roomId: string) => void;
   onMessage: (msg: string) => void;
   onCreateRoom: (roomName: string) => void;

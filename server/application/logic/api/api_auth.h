@@ -12,7 +12,7 @@ using std::string;
  */
 struct AuthResult {
     bool success;               // 认证是否成功
-    int64_t user_id;            // 用户ID
+    string user_id;             // 用户ID (UUID)
     string username;            // 用户名
     string email;               // 邮箱
     string error_message;       // 错误信息

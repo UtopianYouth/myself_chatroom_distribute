@@ -2,7 +2,7 @@
 #include "api_room.h"
 
 
-bool ApiCreateRoom(const std::string& room_id, const string& room_name, int creator_id, string& error_msg) {
+bool ApiCreateRoom(const std::string& room_id, const string& room_name, const string& creator_id, string& error_msg) {
     CDBManager* db_manager = CDBManager::getInstance();
     CDBConn* db_conn = db_manager->GetDBConn("chatroom_master");
     if (!db_conn) {
@@ -14,8 +14,8 @@ bool ApiCreateRoom(const std::string& room_id, const string& room_name, int crea
     std::stringstream ss;
     ss << "INSERT INTO room_info (room_id, room_name, creator_id) VALUES ('"
         << room_id << "', '"
-        << room_name << "', "
-        << creator_id << ")";
+        << room_name << "', '"
+        << creator_id << "')";
 
     if (!db_conn->ExecuteUpdate(ss.str().c_str(), true)) {
         error_msg = "create chatroom failed";
@@ -25,7 +25,7 @@ bool ApiCreateRoom(const std::string& room_id, const string& room_name, int crea
     return true;
 }
 
-bool ApiGetRoomInfo(const std::string& room_id, string& room_name, int& creator_id, string& create_time,
+bool ApiGetRoomInfo(const std::string& room_id, string& room_name, string& creator_id, string& create_time,
     string& update_time, string& error_msg) {
     CDBManager* db_manager = CDBManager::getInstance();
     CDBConn* db_conn = db_manager->GetDBConn("chatroom_slave");
@@ -47,7 +47,7 @@ bool ApiGetRoomInfo(const std::string& room_id, string& room_name, int& creator_
 
     if (res_set->Next()) {
         room_name = res_set->GetString("room_name");
-        creator_id = res_set->GetInt("creator_id");
+        creator_id = res_set->GetString("creator_id");
         create_time = res_set->GetString("create_time");
         update_time = res_set->GetString("update_time");
         delete res_set;
@@ -81,7 +81,7 @@ bool ApiGetAllRooms(std::vector<Room>& rooms, string& error_msg, const string& o
         Room room;
         room.room_id = res_set->GetString("room_id");
         room.room_name = res_set->GetString("room_name");
-        room.creator_id = res_set->GetInt("creator_id");
+        room.creator_id = res_set->GetString("creator_id");
         room.create_time = res_set->GetString("create_time");
         room.update_time = res_set->GetString("update_time");
         rooms.push_back(room);
