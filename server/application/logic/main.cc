@@ -267,6 +267,7 @@ private:
             Json::Value room;
             room["id"] = room_item.room_id;
             room["name"] = room_item.room_name;
+            room["creator_id"] = room_item.creator_id;
             room["hasMoreMessages"] = message_batch.has_more;
 
             Json::Value messages;
@@ -596,7 +597,6 @@ private:
     }
 
     void handleCreateRoom(const TcpConnectionPtr& conn, const string& request) {
-        // 解析HTTP请求
         string method, path, body;
         if (!HttpParser::parseHttpRequest(request, method, path, body)) {
             LOG_ERROR << "Failed to parse HTTP request";
@@ -604,7 +604,6 @@ private:
             return;
         }
 
-        // 解析JSON
         Json::Value json;
         if (!HttpParser::parseJsonBody(body, json)) {
             LOG_ERROR << "Failed to parse JSON body";
@@ -644,10 +643,38 @@ private:
             LOG_INFO << "Creating room: " << room_name << " by user: " << creator_username << " (ID: " << creator_id << ")";
 
             string response_json;
-            // 生成房间ID
-            string room_id = GenerateUUID();
+
+            string room_id;
             RoomService& room_service = RoomService::getInstance();
             string error_msg;
+
+            // 检查房间名是否已存在
+            if (room_service.roomExistByName(room_name)) {
+                LOG_WARN << "Room name already exists: " << room_name;
+                
+                Json::Value failed_response;
+                failed_response["type"] = "serverCreateRoom";
+                
+                Json::Value response_payload;
+                response_payload["roomId"] = ""; // roomId = "" 表示房间名已存在
+                response_payload["roomName"] = "";
+                response_payload["creatorId"] = "";
+                response_payload["creatorUsername"] = "";
+                failed_response["payload"] = response_payload;
+                
+                Json::FastWriter writer;
+                string failed_json = writer.write(failed_response);
+                
+                string response = "HTTP/1.1 200 OK\r\n";
+                response += "Content-Type: application/json\r\n";
+                response += "Content-Length: " + std::to_string(failed_json.length()) + "\r\n";
+                response += "Access-Control-Allow-Origin: *\r\n";
+                response += "\r\n";
+                response += failed_json;
+                conn->send(response);
+                return;
+            }
+
             int ret = room_service.createRoom(room_name, creator_id, creator_username, room_id, error_msg);
             if (ret != 0) {
                 response_json = error_msg;
@@ -676,12 +703,12 @@ private:
                 response += success_json;
                 conn->send(response);
                 
-                // Kafka广播房间创建消息
+                // kafka 广播房间创建消息
                 ChatRoom::Job::PushMsg pushMsg;
-                pushMsg.set_type(ChatRoom::Job::PushMsg_Type_BROADCAST);  // 广播给所有人
+                pushMsg.set_type(ChatRoom::Job::PushMsg_Type_BROADCAST);
                 pushMsg.set_operation(5);  // 5: 创建房间
                 pushMsg.set_room("global");  // 全局广播
-                pushMsg.set_msg(success_json);  // 使用相同的WebSocket格式消息
+                pushMsg.set_msg(success_json);
                 
                 LOG_INFO << "Preparing Kafka broadcast message:";
                 LOG_INFO << "  Room: " << pushMsg.room();
@@ -694,22 +721,22 @@ private:
                     if (producer_.sendMessage(serialized_msg)) {
                         LOG_INFO << "Room creation broadcast sent to Kafka successfully";
                     }
-                    else{
+                    else {
                         LOG_ERROR << "Failed to send room creation broadcast to Kafka";
                     }
                 }
-                else{
+                else {
                     LOG_ERROR << "Failed to serialize room creation broadcast message";
                 }
 
                 LOG_INFO << "Room created successfully: " << room_id;
 
             } 
-            else{
+            else {
                 sendErrorResponse(conn, 500, "Failed to create room: " + response_json);
             }
         }
-        else{
+        else {
             sendErrorResponse(conn, 400, "Unsupported message type");
         }
     }

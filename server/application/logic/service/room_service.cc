@@ -39,6 +39,7 @@ int RoomService::initialize() {
         LOG_ERROR << "Failed to refresh m_room_list";
         return -1;
     }
+
     LOG_INFO << "RoomService initialization completed, total rooms: " << m_room_list.size();
 
     return 0;
@@ -95,6 +96,7 @@ int RoomService::addRoomToList(const Room& room) {
     }
     
     m_room_list.push_back(room);
+    
     LOG_INFO << "Room added to m_room_list: " << room.room_id << ", name: " << room.room_name;
 
     return 0;
@@ -116,6 +118,15 @@ int RoomService::refreshRoomList() {
 
     LOG_INFO << "Room cache refreshed, total rooms: " << m_room_list.size();
     return 0;
+}
+
+bool RoomService::roomExistByName(const string& room_name){
+    for (auto& room : m_room_list) {
+        if (room.room_name == room_name) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

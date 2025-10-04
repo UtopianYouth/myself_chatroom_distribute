@@ -3,7 +3,8 @@
 
 /**
  * 1. to cookie ==> the key of redis
- *
+ * 2. user_id
+ * 3. room_id
  * @return: the unique uuid based on time and mac
  */
 string GenerateUUID() {

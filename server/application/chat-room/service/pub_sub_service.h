@@ -14,7 +14,7 @@ private:
     string room_id;
     string room_topic;
     string creator_id;          // UUID string
-    std::unordered_set<string> user_ids;
+    std::unordered_set<string> user_ids;    // all users subscribe this room
 public:
     RoomTopic(string room_id, string room_topic, const string& creator_id);
     ~RoomTopic();
@@ -102,6 +102,7 @@ public:
             }
             user_ids = this->room_topic_map[room_id]->GetSubscribers();
         }
+
         callback(user_ids);
     }
     // 房间列表管理: comet 层用于订阅管理

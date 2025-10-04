@@ -76,6 +76,9 @@ public:
 
     // 重新加载房间列表
     int refreshRoomList();
+    
+    // 判断房间是否存在
+    bool roomExistByName(const string& room_name);
 
 private:
     RoomService() = default;

@@ -84,11 +84,13 @@ namespace ChatRoom {
                     PubSubService::AddRoom(room);
                     
                     LOG_INFO << "Room " << room_id << " (created by " << creator_username << ") successfully added to subscription management";
-                } else {
+                }
+                else {
                     LOG_WARN << "Invalid room creation message format";
                 }
-            } else {
-                LOG_ERROR << "Failed to parse room creation JSON message";
+            }
+            else {
+                // 以后待扩展的功能 ==> 删除房间，修改房间
             }
         }
         
@@ -98,7 +100,7 @@ namespace ChatRoom {
         // 广播给所有在线用户
         {
             std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
-            LOG_INFO << "Broadcasting to " << s_user_ws_conn_map.size() << " online users";
+            LOG_INFO << "Broadcast to " << s_user_ws_conn_map.size() << " online users";
             
             for (const auto& user_pair : s_user_ws_conn_map) {
                 const string& userId = user_pair.first;
@@ -107,13 +109,15 @@ namespace ChatRoom {
                 if (ws_conn_ptr) {
                     ws_conn_ptr->send(ws_frame);
                     LOG_DEBUG << "Broadcast message sent to user: " << userId;
-                } else {
+                }
+                else {
                     LOG_WARN << "Invalid connection for user: " << userId;
                 }
             }
         }
         
         LOG_INFO << "Broadcast completed successfully";
+
         return grpc::Status::OK;
     }
 
@@ -138,6 +142,7 @@ namespace ChatRoom {
             LOG_INFO << "room_id:" << room_id << ", callback " << ", user_ids.size(): " << user_ids.size();
             for (const string& userId : user_ids) {
                 CHttpConnPtr ws_conn_ptr = nullptr;
+
                 {
                     std::lock_guard<std::mutex> lock(s_mtx_user_ws_conn_map);
                     auto it = s_user_ws_conn_map.find(userId);
@@ -145,10 +150,12 @@ namespace ChatRoom {
                         ws_conn_ptr = it->second;
                     }
                 }
+
                 if (ws_conn_ptr) {
                     ws_conn_ptr->send(ws_frame);
                     LOG_DEBUG << "Message sent to user: " << userId;
-                } else {
+                }
+                else {
                     LOG_WARN << "can't find userid: " << userId;
                 }
             }

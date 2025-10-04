@@ -527,6 +527,22 @@ int CWebSocketConn::HandleClientCreateRoom(Json::Value& root) {
     string room_id = payload["roomId"].asString();
     string room_name = payload["roomName"].asString();
     
+    if (room_id.empty()) {
+        LOG_INFO << "Room name duplicated, sending failure response to client for room: (" << room_name << ")";
+        Json::Value resp;
+        resp["type"] = "serverCreateRoom";
+        Json::Value respPayload;
+        respPayload["roomId"] = "";
+        respPayload["roomName"] = room_name;
+        respPayload["creatorId"] = this->user_id;
+        resp["payload"] = respPayload;
+        Json::FastWriter writer;
+        std::string resp_json = writer.write(resp);
+        std::string websocket_frame = BuildWebSocketFrame(resp_json, 0x01);
+        this->send(websocket_frame);
+        return 0;
+    }
+    
     LOG_INFO << "Room created successfully: " << room_id << " (" << room_name << ")";
     return 0;
 }
