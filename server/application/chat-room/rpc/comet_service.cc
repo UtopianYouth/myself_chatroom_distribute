@@ -3,7 +3,6 @@
 #include "websocket_conn.h"
 #include "../service/pub_sub_service.h"
 #include <json/json.h>
-#include "../api/api_common.h"
 
 extern std::unordered_map<string, CHttpConnPtr> s_user_ws_conn_map;
 extern std::mutex s_mtx_user_ws_conn_map;

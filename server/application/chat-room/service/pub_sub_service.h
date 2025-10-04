@@ -1,12 +1,14 @@
 #ifndef __PUB_SUB_SERVICE_H__
 #define __PUB_SUB_SERVICE_H__
-#include<unordered_map>
-#include<unordered_set>
-#include<mutex>
-#include<vector>
-#include<functional>
-#include<memory>
-#include"api_types.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <mutex>
+#include <vector>
+#include <functional>
+#include <memory>
+#include "api_types.h"
+#include "muduo/base/Logging.h"
+#include <json/json.h>
 
 // Room manager
 class RoomTopic {
@@ -55,7 +57,7 @@ public:
             return false;
         }
         
-        shared_ptr<RoomTopic> room_topic_ptr = std::make_shared<RoomTopic>(room_id, room_topic, creator_id);
+        std::shared_ptr<RoomTopic> room_topic_ptr = std::make_shared<RoomTopic>(room_id, room_topic, creator_id);
         room_topic_map[room_id] = room_topic_ptr;
         return true;
     }

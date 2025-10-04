@@ -5,19 +5,17 @@
 #include <atomic>
 #include <unordered_map>
 #include <shared_mutex>
+#include <json/json.h>
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/TcpConnection.h"
 #include "muduo/base/ThreadPool.h"
 #include "muduo/net/EventLoop.h"
 #include "muduo/base/Logging.h"
 #include "config_file_reader.h"
-
 #include "http_handler.h"
 #include "service/pub_sub_service.h"
-#include "api_room.h"
 #include "service/logic_config.h"
 #include "service/logic_client.h"
-#include <json/json.h>
 
 #ifdef ENABLE_RPC
 #include <thread>

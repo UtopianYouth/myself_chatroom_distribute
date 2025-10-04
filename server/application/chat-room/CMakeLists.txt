@@ -3,29 +3,22 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/base)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/api)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mysql)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/redis)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/service)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/rpc)
 
-INCLUDE_DIRECTORIES(/usr/include/mysql)
 INCLUDE_DIRECTORIES(/usr/include/jsoncpp)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/base BASE_LIST)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/api API_LIST)
-AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/mysql MYSQL_LIST)
-AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/redis REDIS_LIST)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/service SERVICE_LIST)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/rpc RPC_LIST)
 
 # 根据RPC开关决定是否包含RPC源文件
 if(ENABLE_RPC)
     ADD_EXECUTABLE(chat-room main.cc  ${SERVICE_LIST} 
-        ${BASE_LIST} ${API_LIST} ${MYSQL_LIST}
-        ${REDIS_LIST} ${RPC_LIST})
+        ${BASE_LIST} ${API_LIST} ${RPC_LIST})
 else()
     ADD_EXECUTABLE(chat-room main.cc  ${SERVICE_LIST} 
-        ${BASE_LIST} ${API_LIST} ${MYSQL_LIST}
-        ${REDIS_LIST})
+        ${BASE_LIST} ${API_LIST})
 endif()
 
 # Find Protobuf installation
@@ -61,16 +54,14 @@ endif()
 # 根据RPC开关决定链接的库
 if(ENABLE_RPC)
     TARGET_LINK_LIBRARIES(chat-room muduo_net jsoncpp 
-        mysqlclient uuid ssl crypto curl
+        uuid ssl crypto curl
         ${_REFLECTION}
         ${_GRPC_GRPCPP}
         ${_PROTOBUF_LIBPROTOBUF})
 else()
     TARGET_LINK_LIBRARIES(chat-room muduo_net jsoncpp 
-        mysqlclient uuid ssl crypto curl)
+        uuid ssl crypto curl)
 endif()
-
-# 测试程序已移除 - 测试文件不存在
 
 
 

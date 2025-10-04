@@ -8,6 +8,7 @@
 #include <memory>
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 #include "websocket_conn.h"
 
 using namespace muduo;
