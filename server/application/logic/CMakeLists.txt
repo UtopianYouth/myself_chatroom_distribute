@@ -66,7 +66,6 @@ TARGET_LINK_LIBRARIES(logic
     muduo_base
     jsoncpp
     mysqlclient
-    hiredis
     rdkafka
     rdkafka++
     pthread

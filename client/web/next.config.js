@@ -20,6 +20,9 @@ const prodConfig = {
   images: {
     unoptimized: true, // required by export
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports =

@@ -2,6 +2,22 @@
 
 ## 一、项目部署
 
+**环境依赖**
+
+> 前端
+>
+> - node-v21.7.3-linux-x64
+>
+> 后端
+>
+> - Ubuntu20.04
+>- MySQL 8.0.42
+> - Redis 6.0.16
+>- gcc/g++ 10.5.0
+> - kafka_2.13-3.7.2
+>- gRPC/libprotoc 3.19.4
+> - kafka 2.13-3.7.2
+
 **前端**
 
 ```bash
@@ -21,7 +37,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug ..
 # grpc
 cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_RPC=ON ..
 make clean
-make
+make 
 ```
 
 **分布式下后端启动流程**
