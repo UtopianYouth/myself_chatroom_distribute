@@ -30,6 +30,7 @@ using RoomTopicPtr = std::shared_ptr<RoomTopic>;
 // callback: based on function
 using PubSubCallback = std::function<void(std::unordered_set<string>& user_ids)>;
 
+// Subscribe Manager
 class PubSubService {
 private:
     std::mutex room_topic_map_mutex;
@@ -83,6 +84,7 @@ public:
         }
 
         this->room_topic_map[room_id]->AddSubscriber(user_id);
+        return true;
     }
 
     // delete user from room topic 

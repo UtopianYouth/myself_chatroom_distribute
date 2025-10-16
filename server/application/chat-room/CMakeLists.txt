@@ -1,67 +1,53 @@
+cmake_minimum_required(VERSION 3.16)
+project(chatroom LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# 将可执行文件输出到 build/bin 目录
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# 添加 muduo 子目录
+add_subdirectory(muduo/base)
+add_subdirectory(muduo/net)
+
+# 设置 muduo 头文件包含路径
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/muduo)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/muduo/base)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/muduo/net)
 
+# 查找依赖包
+find_package(Protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
 
+# 设置库文件输出路径
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/base)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/api)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/service)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/rpc)
-
+INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(/usr/include/jsoncpp)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/base BASE_LIST)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/api API_LIST)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/service SERVICE_LIST)
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/rpc RPC_LIST)
 
-# 根据RPC开关决定是否包含RPC源文件
-if(ENABLE_RPC)
-    ADD_EXECUTABLE(chat-room main.cc  ${SERVICE_LIST} 
-        ${BASE_LIST} ${API_LIST} ${RPC_LIST})
-else()
-    ADD_EXECUTABLE(chat-room main.cc  ${SERVICE_LIST} 
-        ${BASE_LIST} ${API_LIST})
-endif()
 
-# Find Protobuf installation
-if(ENABLE_RPC)
-    # Looks for protobuf-config.cmake file installed by Protobuf's cmake installation.
-    set(protobuf_MODULE_COMPATIBLE TRUE)
-    # 添加 gRPC 和 Protobuf 相关路径
-    find_package(Protobuf REQUIRED)
-    find_package(gRPC CONFIG REQUIRED)
-    message(STATUS "Using protobuf ${Protobuf_VERSION}")
-    
-    set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
-    set(_REFLECTION gRPC::grpc++_reflection)
-    if(CMAKE_CROSSCOMPILING)
-        find_program(_PROTOBUF_PROTOC protoc)
-    else()
-        set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
-    endif()
-    
-    # Find gRPC installation
-    # Looks for gRPCConfig.cmake file installed by gRPC's cmake installation.
-    find_package(gRPC CONFIG REQUIRED)
-    message(STATUS "Using gRPC ${gRPC_VERSION}")
-    
-    set(_GRPC_GRPCPP gRPC::grpc++)
-    if(CMAKE_CROSSCOMPILING)
-        find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
-    else()
-        set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
-    endif()
-endif()
-
-# 根据RPC开关决定链接的库
-if(ENABLE_RPC)
-    TARGET_LINK_LIBRARIES(chat-room muduo_net muduo_base jsoncpp 
-        uuid ssl crypto curl
-        ${_REFLECTION}
-        ${_GRPC_GRPCPP}
-        ${_PROTOBUF_LIBPROTOBUF})
-else()
-    TARGET_LINK_LIBRARIES(chat-room muduo_net muduo_base jsoncpp 
-        uuid ssl crypto curl)
-endif()
+ADD_EXECUTABLE(chat-room main.cc ${SERVICE_LIST} ${BASE_LIST} ${API_LIST} ${RPC_LIST})
 
 
+# find_package calls are now in the top-level CMakeLists.txt and are no longer needed here.
 
+# Using imported targets (like gRPC::grpc++) correctly brings in all necessary 
+# transitive dependencies (like gpr, absl, ssl, crypto, zlib, etc.).
+TARGET_LINK_LIBRARIES(chat-room muduo_net muduo_base jsoncpp curl
+    gRPC::grpc++
+    protobuf::libprotobuf
+)
+
+# 复制配置文件到输出目录
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/chat-room.conf
+    ${CMAKE_BINARY_DIR}/bin/chat-room.conf
+    COPYONLY
+)

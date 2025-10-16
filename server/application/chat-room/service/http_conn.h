@@ -9,13 +9,13 @@
 #define HTTP_RESPONSE_JSON                                                     \
     "HTTP/1.1 200 OK\r\n"                                                      \
     "Connection:close\r\n"                                                     \
-    "Content-Length:%d\r\n"                                                    \
+    "Content-Length:%zu\r\n"                                                   \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
 #define HTTP_RESPONSE_WITH_CODE                                               \
     "HTTP/1.1 %d %s\r\n"                                                      \
     "Connection:close\r\n"                                                    \
-    "Content-Length:%d\r\n"                                                   \
+    "Content-Length:%zu\r\n"                                                   \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
 // 86400 Seconds = 24 Hours  
@@ -23,20 +23,20 @@
     "HTTP/1.1 %d %s\r\n"                                                       \
     "Connection:close\r\n"                                                     \
     "set-cookie: sid=%s; HttpOnly; Max-Age=86400; SameSite=Strict\r\n"         \
-    "Content-Length:%d\r\n"                                                    \
+    "Content-Length:%zu\r\n"                                                    \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
 #define HTTP_RESPONSE_HTML_MAX 4096
 #define HTTP_RESPONSE_HTML                                                     \
     "HTTP/1.1 200 OK\r\n"                                                      \
     "Connection:close\r\n"                                                     \
-    "Content-Length:%d\r\n"                                                    \
+    "Content-Length:%zu\r\n"                                                    \
     "Content-Type:text/html;charset=utf-8\r\n\r\n%s"
 
 #define HTTP_RESPONSE_BAD_REQ                                                  \
     "HTTP/1.1 400 Bad\r\n"                                                     \
     "Connection:close\r\n"                                                     \
-    "Content-Length:%d\r\n"                                                    \
+    "Content-Length:%zu\r\n"                                                   \
     "Content-Type:application/json;charset=utf-8\r\n\r\n%s"
 
 using namespace muduo;

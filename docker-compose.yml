@@ -3,25 +3,44 @@ services:
     image: bitnami/zookeeper:3.9.2
     environment:
       ALLOW_ANONYMOUS_LOGIN: "yes"
-    ports:
-      - "2181:2181"
+
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     restart: unless-stopped
 
   kafka:
-    image: wurstmeister/kafka:2.13-2.8.1
+    image: bitnami/kafka:3.7
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-    ports:
-      - "9092:9092"
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_ENABLE_KRAFT: "no"
+      KAFKA_CFG_ZOOKEEPER_SESSION_TIMEOUT_MS: "60000"
+      KAFKA_CFG_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "30000"
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     restart: unless-stopped
 
   redis:
     image: redis:6.0.16
     command: redis-server --appendonly yes
-    ports:
-      - "6380:6379"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     restart: unless-stopped
 
   mysql:
@@ -30,36 +49,114 @@ services:
       MYSQL_ROOT_PASSWORD: 123
       MYSQL_DATABASE: myself_chatroom
     command: --default-authentication-plugin=mysql_native_password
-    ports:
-      - "3307:3306"
+
     volumes:
       - ./server/create_tables.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p123 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  init-mysql:
+    image: mysql:8.0.37
+    container_name: init-mysql
+    volumes:
+      - ./server/create_tables.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: >
+      bash -c "
+      echo 'Waiting for MySQL to be ready...' &&
+      until mysql -h mysql -P 3306 -uroot -p123 -e 'SELECT 1' &> /dev/null; do
+        sleep 2
+      done &&
+      echo 'MySQL is ready, executing SQL script...' &&
+      mysql -h mysql -P 3306 -uroot -p123 myself_chatroom < /docker-entrypoint-initdb.d/init.sql &&
+      echo 'SQL script executed successfully'"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+
+  init-kafka:
+    image: bitnami/kafka:3.7
+    container_name: init-kafka
+    command: ["bash", "-lc", "/opt/bitnami/kafka/bin/kafka-topics.sh --create --topic my_topic --bootstrap-server kafka:9092 --replication-factor 1 --partitions 3 || /opt/bitnami/kafka/bin/kafka-topics.sh --describe --topic my_topic --bootstrap-server kafka:9092 || true"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+
+  logic-app:
+    build:
+      context: ./server
+      dockerfile: application/logic/Dockerfile
+    container_name: logic-app
+
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      init-mysql:
+        condition: service_started
+      init-kafka:
+        condition: service_started
+    restart: unless-stopped
+
+  job-app:
+    build:
+      context: ./server
+      dockerfile: application/job/Dockerfile
+    container_name: job-app
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      init-mysql:
+        condition: service_started
+      init-kafka:
+        condition: service_started
     restart: unless-stopped
 
   chatroom-app:
-    build: ./server
+    build:
+      context: ./server
+      dockerfile: application/chat-room/Dockerfile
     container_name: chatroom-app
-    ports:
-      - "8080:8080"
-      - "8090:8090"
-      - "50051:50051"
-    environment:
-      TZ: Asia/Shanghai
-      KAFKA_BROKER: kafka:9092
-      ZK_ADDR: zookeeper:2181
-      REDIS_ADDR: redis:6379
-      MYSQL_HOST: mysql
-      MYSQL_PORT: "3306"
-      MYSQL_USER: root
-      MYSQL_PASS: "123"
+    depends_on:
+      logic-app:
+        condition: service_started
     restart: unless-stopped
 
   web-frontend:
-    build: ./client/web
+    build:
+      context: ./client/web
     container_name: web-frontend
+    environment:
+      SERVER_BASE_URL: http://chatroom-app:8080
+    depends_on:
+      chatroom-app:
+        condition: service_started
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.21-alpine
+    container_name: nginx_proxy
     ports:
       - "80:80"
-    environment:
-      TZ: Asia/Shanghai
-      SERVER_BASE_URL: http://chatroom-app:8080
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web-frontend
+      - chatroom-app
     restart: unless-stopped

@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include <json/json.h>
+#include <thread>
+#include <grpcpp/grpcpp.h>
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/TcpConnection.h"
 #include "muduo/base/ThreadPool.h"
@@ -16,12 +18,7 @@
 #include "service/pub_sub_service.h"
 #include "service/logic_config.h"
 #include "service/logic_client.h"
-
-#ifdef ENABLE_RPC
-#include <thread>
-#include <grpcpp/grpcpp.h>
-#include "comet_service.h"
-#endif
+#include "rpc/comet_service.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -74,6 +71,8 @@ struct ServerConfig {
     std::string config_file_path = DEFAULT_CONFIG_FILE;
     std::string bind_ip = DEFAULT_BIND_IP;
     uint16_t http_port = DEFAULT_HTTP_PORT;
+    std::string grpc_bind_ip = "0.0.0.0";
+    uint16_t grpc_port = 50051;
     int num_event_loops = 0;    // number of event loops
     int num_threads = DEFAULT_THREAD_POOL_SIZE; 
     int timeout_ms = 1000;
@@ -98,6 +97,14 @@ struct ServerConfig {
 
             if (char* str_http_bind_port = config_file.GetConfigName("http_bind_port")) {
                 http_port = static_cast<uint16_t>(atoi(str_http_bind_port));
+            }
+
+            // get gRPC bind ip/port
+            if (char* str_grpc_bind_ip = config_file.GetConfigName("grpc_bind_ip")) {
+                grpc_bind_ip = std::string(str_grpc_bind_ip);
+            }
+            if (char* str_grpc_bind_port = config_file.GetConfigName("grpc_bind_port")) {
+                grpc_port = static_cast<uint16_t>(atoi(str_grpc_bind_port));
             }
 
             if (char* str_timeout_ms = config_file.GetConfigName("timeout_ms")) {
@@ -322,7 +329,7 @@ private:
         if (argc > 1) {
             m_config.config_file_path = argv[1];
         }
-        std::cout << "Configuration file: " << m_config.config_file_path << std::endl;
+        LOG_INFO << "Config file: " << m_config.config_file_path;
 
         return true;
     }
@@ -334,8 +341,6 @@ private:
         // SIG_IGN 忽略信号的处理程序
         signal(SIGPIPE, SIG_IGN);
     }
-
-
 
     // init logic config
     bool InitializeLogicConfig() {
@@ -350,9 +355,9 @@ private:
 
     // start servers
     int StartServers() {
-#ifdef ENABLE_RPC
+
         // start gRPC server
-        std::string grpc_server_address("0.0.0.0:50051");
+        std::string grpc_server_address = m_config.grpc_bind_ip + ":" + std::to_string(m_config.grpc_port);
         ChatRoom::CometServiceImpl comet_service;
 
         grpc::ServerBuilder builder;
@@ -360,7 +365,6 @@ private:
         builder.RegisterService(&comet_service);
         std::unique_ptr<grpc::Server> grpc_server(builder.BuildAndStart());
         LOG_INFO << "gRPC Server listening on " << grpc_server_address;
-#endif
 
         EventLoop loop;
         InetAddress addr(m_config.bind_ip, m_config.http_port);
@@ -372,21 +376,18 @@ private:
             return -1;
         }
 
-#ifdef ENABLE_RPC
         // handle HTTP and gRPC requests concurrently
         std::thread grpc_thread([&grpc_server]() {
             grpc_server->Wait();
             });
-#endif
 
         LOG_INFO << "ChatRoom server is running...";
 
         loop.loop(m_config.timeout_ms);     // 1000ms
         
-#ifdef ENABLE_RPC
-    grpc_server->Shutdown();
-    grpc_thread.join();
-#endif
+        grpc_server->Shutdown();
+        grpc_thread.join();
+
         return 0;
     }
 
@@ -401,9 +402,8 @@ private:
 };
 
 int main(int argc, char* argv[]) {
-    std::cout << "Myself ChatRoom Server v1.0" << std::endl;
-    std::cout << "Usage: " << argv[0] << " [config_file]" << std::endl;
 
+    LOG_INFO << "Myself ChatRoom Server";
     ChatRoomApplication app;
 
     return app.Run(argc, argv);

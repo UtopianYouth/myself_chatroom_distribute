@@ -244,7 +244,7 @@ function reducer(state: State, action: Action): State {
       };
     case "add_new_room":
       const creator = state.users[payload.creatorId];
-      const creatorName = creator ? creator.username : (payload.creatorId === state.currentUser?.id ? state.currentUser.username : "某用户");
+      const creatorName = creator ? creator.username : payload.creatorId;
       const d = new Date();
       const time = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
       const message = `${creatorName}在${time}创建了${payload.roomName}，快来该房间和他聊天吧！`;

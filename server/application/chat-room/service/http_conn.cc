@@ -37,7 +37,6 @@ void CHttpConn::OnRead(Buffer* buf) // CHttpConn业务层面的OnRead
         else if (strncmp(url.c_str(), "/api/create-account", 18) == 0) {   //  创建账号
             _HandleRegisterRequest(url, content);
         }
-
         else {
             char* resp_content = new char[256];
             string str_json = "{\"code\": 1}";
@@ -51,7 +50,6 @@ void CHttpConn::OnRead(Buffer* buf) // CHttpConn业务层面的OnRead
             snprintf(resp_content, 256, HTTP_RESPONSE_REQ, len_json, str_json.c_str());
             tcp_conn_->send(resp_content);
         }
-
     }
 
 }
@@ -107,7 +105,7 @@ int CHttpConn::_HandleRegisterRequest(string& url, string& post_data) {
 
         // encapsulate http response
         snprintf(http_response_data, HTTP_RESPONSE_JSON_MAX, HTTP_RESPONSE_WITH_COOKIE,
-            http_code, http_code_msg.c_str(), response_json.c_str(), 0, "");
+            http_code, http_code_msg.c_str(), response_json.c_str(), (size_t)0, "");
     }
     else {
         // register failed
@@ -117,7 +115,7 @@ int CHttpConn::_HandleRegisterRequest(string& url, string& post_data) {
 
         // encapsulate http response
         snprintf(http_response_data, HTTP_RESPONSE_JSON_MAX, HTTP_RESPONSE_WITH_CODE,
-            http_code, http_code_msg.c_str(), response_json.length(), response_json.c_str());
+            http_code, http_code_msg.c_str(), (size_t)response_json.length(), response_json.c_str());
     }
 
     tcp_conn_->send(http_response_data);
@@ -145,7 +143,7 @@ int CHttpConn::_HandleLoginRequest(string& url, string& post_data) {
         http_code = 204;
         http_code_msg = "No Content";
         snprintf(http_response_data, HTTP_RESPONSE_JSON_MAX, HTTP_RESPONSE_WITH_COOKIE,
-            http_code, http_code_msg.c_str(), response_json.c_str(), 0, "");
+            http_code, http_code_msg.c_str(), response_json.c_str(), (size_t)0, "");
     }
     else {
         LOG_INFO << "login failed, repsonse json: " << response_json;
@@ -153,7 +151,7 @@ int CHttpConn::_HandleLoginRequest(string& url, string& post_data) {
         http_code = 400;
         http_code_msg = "Bad Request";
         snprintf(http_response_data, HTTP_RESPONSE_JSON_MAX, HTTP_RESPONSE_WITH_CODE,
-            http_code, http_code_msg.c_str(), response_json.length(), response_json.c_str());
+            http_code, http_code_msg.c_str(), (size_t)response_json.length(), response_json.c_str());
     }
 
     tcp_conn_->send(http_response_data);
@@ -174,7 +172,7 @@ int CHttpConn::_HandleHtml(string& url, string& post_data) {
 
     char* szContent = new char[HTTP_RESPONSE_JSON_MAX];
     uint32_t ulen = buffer.str().size();
-    snprintf(szContent, HTTP_RESPONSE_JSON_MAX, HTTP_RESPONSE_HTML, ulen,
+    snprintf(szContent, HTTP_RESPONSE_JSON_MAX, HTTP_RESPONSE_HTML, (size_t)ulen,
         buffer.str().c_str());
 
     tcp_conn_->send(szContent);
@@ -210,7 +208,7 @@ int CHttpConn::_HandleMemHtml(string& url, string& post_data) {
 
     char* szContent = new char[HTTP_RESPONSE_HTML_MAX];
 
-    snprintf(szContent, HTTP_RESPONSE_HTML_MAX, HTTP_RESPONSE_HTML, strlen(htmlStr),
+    snprintf(szContent, HTTP_RESPONSE_HTML_MAX, HTTP_RESPONSE_HTML, (size_t)strlen(htmlStr),
         htmlStr);
 
     tcp_conn_->send(szContent);

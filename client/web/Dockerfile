@@ -1,32 +1,40 @@
-# 前端Dockerfile - 生产环境构建
-FROM node:21.7.3-alpine AS builder
+# 使用 Next.js 服务器运行（无静态导出），保留 rewrites 能力
+# 阶段1：依赖安装与构建
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# 复制package文件
+# 仅拷贝依赖清单，利用缓存
 COPY package*.json ./
-COPY package-lock.json ./
 
-# 安装依赖
-RUN npm ci --only=production
+# npm ci 进行依赖安装
+RUN npm ci --registry https://registry.npmmirror.com --retry 5 --retry-delay 3
 
-# 复制源代码
+# 拷贝源码
 COPY . .
 
-# 构建应用
-RUN NEXT_TELEMETRY_DISABLED=1 npm run build
+# 生产构建
+ARG SERVER_BASE_URL
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WS_URL
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 SERVER_BASE_URL=$SERVER_BASE_URL NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+RUN npm run build
 
-# 生产环境镜像
-FROM nginx:alpine
+# 阶段2：运行期，使用 next start 启动 Next 服务
+FROM node:18-alpine AS runner
 
-# 复制构建结果到nginx目录
-COPY --from=builder /app/out /usr/share/nginx/html
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 
-# 复制nginx配置
-COPY nginx.conf /etc/nginx/nginx.conf
+# 拷贝运行所需文件与构建产物
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/next.config.js ./next.config.js
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
 
-# 暴露端口
-EXPOSE 80
+# 暴露 Next 默认端口
+EXPOSE 3000
 
-# 启动nginx
-CMD ["nginx", "-g", "daemon off;"]
+# 启动 Next 服务器
+CMD ["npm", "run", "start"]

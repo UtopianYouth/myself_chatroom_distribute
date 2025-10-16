@@ -4,14 +4,14 @@
 #include <muduo/base/Logging.h>
 #include <thread>
 #include <chrono>
-
 #include <librdkafka/rdkafkacpp.h>
 #include <grpcpp/grpcpp.h>
-#include "kafka_consumer.h"
-#include "ChatRoom.Job.pb.h"
-#include "ChatRoom.Comet.pb.h"  
-#include "ChatRoom.Comet.grpc.pb.h"  // 使用现有的proto
 #include <json/json.h>
+#include "service/kafka_consumer.h"
+#include "base/config_file_reader.h"
+#include "proto/ChatRoom.Job.pb.h"
+#include "proto/ChatRoom.Comet.pb.h"  
+#include "proto/ChatRoom.Comet.grpc.pb.h"  // 使用现有的proto
 
 using namespace muduo;
 using namespace muduo::net;
@@ -36,7 +36,7 @@ public:
             // 创建并设置Proto消息
             ChatRoom::Protocol::Proto *proto = request.mutable_proto();
             proto->set_ver(1);        // 设置版本号
-            proto->set_op(4);         // 4代表发送消息操作
+            proto->set_op(4);         // 房间内发送消息
             proto->set_seq(0);        // 序列号，可以根据需要设置，用房间作为key, 使用redis 自增
             proto->set_body(msgContent);  // 设置消息内容
 
@@ -145,8 +145,12 @@ public:
 
     CometClient* getClient() {
         if (!m_client) {
-            // chatroom address
-            m_client = std::make_unique<CometClient>("127.0.0.1:50051");  
+            // 从配置文件读取chatroom地址
+            CConfigFileReader config_reader("job.conf");
+            const char* comet_server_c = config_reader.GetConfigName("comet_server");
+            std::string comet_server = comet_server_c ? comet_server_c : "chatroom-app:50051";
+            LOG_INFO << "Connecting to comet server: " << comet_server;
+            m_client = std::make_unique<CometClient>(comet_server);  
         }
         
         return m_client.get();
@@ -161,7 +165,16 @@ int main() {
     ThreadPool threadPool("KafkaThreadPool");
     threadPool.start(4);
 
-    KafkaConsumer consumer("localhost:9092", "my-topic");
+    // 从配置文件读取Kafka配置
+    CConfigFileReader config_reader("job.conf");
+    const char* brokers_c = config_reader.GetConfigName("kafka_brokers");
+    const char* topic_c = config_reader.GetConfigName("kafka_topic");
+    std::string kafka_brokers = brokers_c ? brokers_c : "localhost:9092";
+    std::string kafka_topic = topic_c ? topic_c : "my-topic";
+
+    LOG_INFO << "Initializing Kafka consumer with brokers: " << kafka_brokers << ", topic: " << kafka_topic;
+
+    KafkaConsumer consumer(kafka_brokers, kafka_topic);
     if (!consumer.init() || !consumer.subscribe()) {
         LOG_ERROR << "Failed to initialize Kafka consumer";
         return -1;

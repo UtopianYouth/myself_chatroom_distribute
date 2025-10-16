@@ -410,7 +410,7 @@ int CWebSocketConn::SendHelloMessage() {
         return -1;
     }
     
-    LOG_DEBUG << "Logic hello response: " << response_json;
+    LOG_INFO << "Logic hello response: " << response_json;
     
     // 为用户订阅所有房间
     if (logic_response.isMember("payload") && logic_response["payload"].isMember("rooms")) {
@@ -436,7 +436,7 @@ int CWebSocketConn::SendHelloMessage() {
     
 
     std::string hello_frame = BuildWebSocketFrame(response_json);
-    send(hello_frame);
+    this->send(hello_frame);
     
     LOG_INFO << "Hello message sent successfully for user: " << this->user_id;
 

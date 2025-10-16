@@ -1,0 +1,193 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						5
+					],
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "muduo/base",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "muduo/base",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "muduo/net",
+					"childIndexes" : 
+					[
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "muduo/net",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "muduo/net/http",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 0,
+					"source" : "muduo/net/http",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "muduo/net/inspect",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 0,
+					"source" : "muduo/net/inspect",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "application",
+					"childIndexes" : 
+					[
+						6
+					],
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "application"
+				},
+				{
+					"build" : "application/chat-room",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "application/chat-room",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6
+					],
+					"name" : "tuchuang",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 6,
+					"id" : "chat-room::@000a0d0c0e0cfec70554",
+					"jsonFile" : "target-chat-room-Debug-ba83380a550bc7226592.json",
+					"name" : "chat-room",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "muduo_base::@af02cc837cde80c48ca0",
+					"jsonFile" : "target-muduo_base-Debug-e3c04f1d1fa9aeb8df42.json",
+					"name" : "muduo_base",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "muduo_http::@5787850c391ef1a35796",
+					"jsonFile" : "target-muduo_http-Debug-709ab517c06ffc43c0b8.json",
+					"name" : "muduo_http",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "muduo_inspect::@403560d5477bdc04a513",
+					"jsonFile" : "target-muduo_inspect-Debug-a644eb5b76a514ca01a4.json",
+					"name" : "muduo_inspect",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "muduo_net::@d48a3526fec38d23c536",
+					"jsonFile" : "target-muduo_net-Debug-f0429389779e1863e416.json",
+					"name" : "muduo_net",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/utopianyouth/zerovoice/unit11/myself-chatroom-distribute/build",
+		"source" : "/home/utopianyouth/zerovoice/unit11/myself-chatroom/server"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}

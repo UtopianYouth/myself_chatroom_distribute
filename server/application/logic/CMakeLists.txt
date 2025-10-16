@@ -1,11 +1,17 @@
-cmake_minimum_required(VERSION 3.10)
-
-# 项目名称和版本
-project(logic VERSION 1.0.0)
+cmake_minimum_required(VERSION 3.16)
+project(logic LANGUAGES C CXX)
 
 # 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 添加 muduo 子目录
+add_subdirectory(muduo/base)
+add_subdirectory(muduo/net)
+
+# 查找依赖包
+find_package(Protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
 
 # 编译选项
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
@@ -21,6 +27,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mysql)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/proto)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/redis)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/service)
+INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIRS})
 
 # 包含系统库目录
 INCLUDE_DIRECTORIES(/usr/include/mysql)
@@ -54,13 +61,8 @@ ADD_EXECUTABLE(logic
     ${PROTO_LIST}
 )
 
-# Find Protobuf and gRPC
-find_package(Protobuf REQUIRED)
-find_package(gRPC CONFIG REQUIRED)
-message(STATUS "Using protobuf ${Protobuf_VERSION}")
-message(STATUS "Using gRPC ${gRPC_VERSION}")
-
 # 链接库
+# Using imported targets (like gRPC::grpc++) correctly brings in all necessary transitive dependencies.
 TARGET_LINK_LIBRARIES(logic
     muduo_net
     muduo_base
@@ -70,8 +72,6 @@ TARGET_LINK_LIBRARIES(logic
     rdkafka++
     pthread
     uuid
-    ssl
-    crypto
     curl
     gRPC::grpc++
     protobuf::libprotobuf

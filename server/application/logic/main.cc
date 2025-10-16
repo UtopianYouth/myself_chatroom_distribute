@@ -15,9 +15,56 @@
 #include "api/api_auth.h"
 #include "service/message_service.h"
 #include "service/room_service.h"
+#include "base/config_file_reader.h"
 
 using namespace muduo;
 using namespace muduo::net;
+
+// 统一的配置结构
+struct ServerConfig {
+    std::string bind_ip = "0.0.0.0";
+    uint16_t http_port = 8090;
+    int num_event_loops = 1;
+    int num_threads = 0;
+    int timeout_ms = 1000;
+    Logger::LogLevel log_level = Logger::INFO;
+    std::string kafka_brokers = "localhost:9092";
+    std::string kafka_topic = "my-topic";
+
+    bool loadFromFile(const std::string& config_path) {
+        try {
+            CConfigFileReader config_file(config_path.c_str());
+            if (const char* v = config_file.GetConfigName("http_bind_ip")) {
+                bind_ip = v;
+            }
+            if (const char* v = config_file.GetConfigName("http_bind_port")) {
+                http_port = static_cast<uint16_t>(atoi(v));
+            }
+            if (const char* v = config_file.GetConfigName("num_event_loops")) {
+                num_event_loops = atoi(v);
+            }
+            if (const char* v = config_file.GetConfigName("num_threads")) {
+                num_threads = atoi(v);
+            }
+            if (const char* v = config_file.GetConfigName("timeout_ms")) {
+                timeout_ms = atoi(v);
+            }
+            if (const char* v = config_file.GetConfigName("log_level")) {
+                log_level = static_cast<Logger::LogLevel>(atoi(v));
+            }
+            if (const char* v = config_file.GetConfigName("kafka_brokers")) {
+                kafka_brokers = v;
+            }
+            if (const char* v = config_file.GetConfigName("kafka_topic")) {
+                kafka_topic = v;
+            }
+            return true;
+        } catch (const std::exception& e) {
+            LOG_ERROR << "Failed to load config: " << e.what();
+            return false;
+        }
+    }
+};
 
 // 封装 JSON 字符串为 HTTP 响应
 std::string wrapJsonInHttpResponse(const std::string& jsonContent) {
@@ -31,17 +78,18 @@ std::string wrapJsonInHttpResponse(const std::string& jsonContent) {
 
 class HttpServer {
 public:
-    HttpServer(EventLoop* loop, const InetAddress& listenAddr)
+    HttpServer(EventLoop* loop, const InetAddress& listenAddr, const ServerConfig& config)
         : server_(loop, listenAddr, "HttpServer"),
-          loop_(loop) {
+          loop_(loop),
+          config_(config) {
         server_.setConnectionCallback(
             std::bind(&HttpServer::onConnection, this, _1));
         server_.setMessageCallback(
             std::bind(&HttpServer::onMessage, this, _1, _2, _3));
-        server_.setThreadNum(1);     
+        server_.setThreadNum(config_.num_event_loops);     
         
-        // 初始化Kafka连接
-        if (!producer_.init("localhost:9092", "my-topic")) {
+        // 初始化Kafka连接（从配置传入）
+        if (!producer_.init(config_.kafka_brokers, config_.kafka_topic)) {
             LOG_ERROR << "Failed to initialize Kafka producer";
         }
     }
@@ -776,19 +824,29 @@ private:
     EventLoop* loop_;
     std::map<string, bool> loggedInUsers_; // 存储已登录用户
     KafkaProducer producer_;  // 添加producer成员变量
+    ServerConfig config_;
 
 };
 
 int main() {
     LOG_INFO << "Logic server starting...";
 
-    // 初始化mysql和redis 
+    // 加载配置文件
+    ServerConfig config;
+    if (!config.loadFromFile("logic.conf")) {
+        LOG_ERROR << "Failed to load logic.conf";
+        return -1;
+    }
+    Logger::setLogLevel(config.log_level);
+    LOG_INFO << "Configuration loaded successfully.";
+
+    // 初始化mysql和redis
     MessageStorageManager& storage_mgr = MessageStorageManager::getInstance();
     if (!storage_mgr.init("logic.conf")) {
         LOG_ERROR << "Failed to initialize MessageStorageManager";
         return -1;
     }
-    LOG_INFO << "Database and cache pools initialized successfully";
+    LOG_INFO << "Database and cache pools initialized successfully.";
 
     // 初始化房间服务
     RoomService& room_service = RoomService::getInstance();
@@ -796,15 +854,13 @@ int main() {
         LOG_ERROR << "Failed to initialize rooms in Logic layer";
         return -1;
     }
-    LOG_INFO << "Room service initialized successfully in Logic layer";
+    LOG_INFO << "Room service initialized successfully.";
 
-    // 创建Kafka实例
-    KafkaProducer producer;
-
-    LOG_INFO << "HTTP server starting...";
+    // 启动HTTP服务器
+    LOG_INFO << "HTTP server starting on " << config.bind_ip << ":" << config.http_port;
     EventLoop loop;
-    InetAddress listenAddr(8090);
-    HttpServer server(&loop, listenAddr);
+    InetAddress listenAddr(config.bind_ip, config.http_port);
+    HttpServer server(&loop, listenAddr, config);
     
     server.start();
     loop.loop();

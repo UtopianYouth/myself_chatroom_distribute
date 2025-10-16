@@ -3,8 +3,8 @@ import NextHead from "next/head";
 export default function Head() {
   return (
     <NextHead>
-      <title>GitHub话题聊天室</title>
-      <link rel="icon" href="/favicon.ico" />
+      <title>分布式实时消息推送系统</title>
+      <link rel="icon" href="/boost.ico" />
     </NextHead>
   );
 }
