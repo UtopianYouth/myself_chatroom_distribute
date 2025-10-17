@@ -7,7 +7,7 @@ const nextConfig = {
       {
         source: "/api/:path(.*)",
         destination: `${
-          process.env.SERVER_BASE_URL || "http://localhost:8080"
+          process.env.SERVER_BASE_URL || "http://chatroom-app:8080"
         }/api/:path`,
       },
     ];
