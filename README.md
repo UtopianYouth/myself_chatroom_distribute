@@ -989,3 +989,5 @@ sequenceDiagram
 | Job                | -     | Kafka Consumer | 消费消息并转发     |
 | ChatRoom gRPC      | 50051 | gRPC           | 接收Job的广播请求  |
 | ChatRoom WebSocket | 8080  | WebSocket      | 向客户端推送消息   |
+
+## 七、项目复盘深思

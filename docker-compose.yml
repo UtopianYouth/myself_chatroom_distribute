@@ -3,6 +3,8 @@ services:
     image: bitnami/zookeeper:3.9.2
     environment:
       ALLOW_ANONYMOUS_LOGIN: "yes"
+    ports:
+      - "2181:2181"
 
     healthcheck:
       test: ["CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/2181"]
@@ -25,6 +27,9 @@ services:
       KAFKA_ENABLE_KRAFT: "no"
       KAFKA_CFG_ZOOKEEPER_SESSION_TIMEOUT_MS: "60000"
       KAFKA_CFG_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "30000"
+    ports:
+      - "9092:9092"
+
     healthcheck:
       test: ["CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/9092"]
       interval: 10s
@@ -35,6 +40,8 @@ services:
   redis:
     image: redis:6.0.16
     command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
 
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -49,9 +56,9 @@ services:
       MYSQL_ROOT_PASSWORD: 123
       MYSQL_DATABASE: myself_chatroom
     command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
 
-    volumes:
-      - ./server/create_tables.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p123 || exit 1"]
       interval: 10s
@@ -102,10 +109,10 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
-      init-mysql:
-        condition: service_started
-      init-kafka:
-        condition: service_started
+      # init-mysql:
+      #   condition: service_started
+      # init-kafka:
+      #   condition: service_started
     restart: unless-stopped
 
   job-app:
@@ -122,10 +129,10 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
-      init-mysql:
-        condition: service_started
-      init-kafka:
-        condition: service_started
+      # init-mysql:
+      #   condition: service_started
+      # init-kafka:
+      #   condition: service_started
     restart: unless-stopped
 
   chatroom-app:

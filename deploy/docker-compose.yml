@@ -5,6 +5,7 @@ services:
     container_name: zookeeper
     environment:
       ALLOW_ANONYMOUS_LOGIN: "yes"
+      JVMFLAGS: "-Xmx128m -Xms128m"
     restart: unless-stopped
 
   kafka:
@@ -21,6 +22,7 @@ services:
       KAFKA_ENABLE_KRAFT: "no"
       KAFKA_CFG_ZOOKEEPER_SESSION_TIMEOUT_MS: "60000"
       KAFKA_CFG_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "30000"
+      KAFKA_HEAP_OPTS: "-Xmx256m -Xms256m"
     restart: unless-stopped
 
   redis:
@@ -42,8 +44,6 @@ services:
       MYSQL_ROOT_PASSWORD: 123
       MYSQL_DATABASE: myself_chatroom
     command: --default-authentication-plugin=mysql_native_password
-    volumes:
-      - ../server/create_tables.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p123 || exit 1"]
       interval: 10s

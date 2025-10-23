@@ -450,7 +450,7 @@ export const ChatScreen = ({
         if (container) {
           setPreviousScrollHeight(container.scrollHeight);
         }
-        const firstMessage = currentRoomMessages[currentRoomMessages.length - 1];
+        const firstMessage = currentRoomMessages[0];
         if (firstMessage) {
           onRequestHistory(currentRoom.id, firstMessage.id);
           setIsAtTop(false);

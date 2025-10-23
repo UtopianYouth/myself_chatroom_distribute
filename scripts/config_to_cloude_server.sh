@@ -25,12 +25,12 @@ sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST"
 sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r "$DEPLOY_DIR" "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
 sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no -r "$NGINX_DIR" "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
 
-# 显式同步 deploy/.env（隐藏文件，确保存在就覆盖）
+# 同步 deploy/.env
 if [ -f "$ENV_FILE" ]; then
   sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$ENV_FILE" "$SSH_USER@$SSH_HOST:$REMOTE_DIR/deploy/.env"
 fi
 
-# 同步 server/create_tables.sql（如果存在）
+# 同步 server/create_tables.sql
 if [ -f "$SQL_FILE" ]; then
   sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no "$SQL_FILE" "$SSH_USER@$SSH_HOST:$REMOTE_DIR/server/"
 fi

@@ -834,17 +834,7 @@ END:
 }
 
 
-
 // 获取消息队列相关命令
-/**
- * key ：队列名
-    end ：结束值， + 表示最大值
-    start ：开始值， - 表示最小值
-    count ：数量
-    */
-    //    XREVRANGE mystream + -
-    // XREVRANGE 程序员老廖2 + -
-    // XREVRANGE 程序员老廖 + -
 bool  CacheConn::GetXrevrange(const string& key,
     const string start, const string end, int count, std::vector<std::pair<string, string>>& msgs) {
     bool ret = false;
@@ -869,7 +859,10 @@ bool  CacheConn::GetXrevrange(const string& key,
 
     // 检查回复类型
     if (reply->type != REDIS_REPLY_ARRAY) {
-        std::cerr << "Unexpected reply type: " << reply->type << std::endl;
+        std::cerr << "Unexpected reply type: " << reply->type
+                  << ", detail: " << (reply->str ? reply->str : "nil")
+                  << ", elements: " << reply->elements
+                  << std::endl;
         freeReplyObject(reply);
         return false;
     }
@@ -881,7 +874,7 @@ bool  CacheConn::GetXrevrange(const string& key,
             // 第一个元素是消息 ID
             string  message_id = entry->element[0]->str;
 
-            // 第二个元素是消息内容（字段-值对）
+            // 第二个元素是消息内容
             redisReply* fields = entry->element[1];
             if (fields->type == REDIS_REPLY_ARRAY) {
                 string  message_content;
