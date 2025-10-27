@@ -47,6 +47,37 @@ int EncodeLoginJson(api_error_id input, string message, string& str_json) {
 }
 
 /**
+ * 检查用户是否在授权白名单中
+ * @return: 0,authorized; -1,not authorized
+ */
+int CheckUserAuthorization(CDBConn* db_conn, const string& email) {
+    string strSql = FormatString("select is_enabled from authorized_users where email='%s'", email.c_str());
+    LOG_INFO << "exec: " << strSql;
+    CResultSet* result_set = db_conn->ExecuteQuery(strSql.c_str());
+
+    int ret = -1;
+    if (result_set && result_set->Next()) {
+        int is_enabled = result_set->GetInt("is_enabled");
+        if (is_enabled == 1) {
+            LOG_INFO << "email: " << email << " is authorized";
+            ret = 0;
+        } else {
+            LOG_WARN << "email: " << email << " is disabled";
+            ret = -1;
+        }
+    } else {
+        LOG_WARN << "email: " << email << " not in authorized list";
+        ret = -1;
+    }
+
+    if (result_set) {
+        delete result_set;
+    }
+
+    return ret;
+}
+
+/**
  * 验证用户密码
  * @return: 0,verify success; -1,verify failed
  */
@@ -62,20 +93,26 @@ int VerifyUserPassword(string& email, string& password) {
         return -1;
     }
 
-    // 读取用户密码信息
+    // 第一步：检查是否在授权白名单中
+    if (CheckUserAuthorization(db_conn, email) != 0) {
+        LOG_WARN << "user not authorized, email: " << email;
+        return -1;
+    }
+
+    // 第二步：读取用户密码信息并验证
     string strSql = FormatString("select user_id, username, password_hash, salt from user_infos where email='%s'", email.c_str());
     LOG_INFO << "exec: " << strSql;
     CResultSet* result_set = db_conn->ExecuteQuery(strSql.c_str());
-    
+
     if (result_set && result_set->Next()) {
         string username = result_set->GetString("username");
         string db_password_hash = result_set->GetString("password_hash");
         string salt = result_set->GetString("salt");
-        
+
         // 计算客户端密码哈希
         MD5 md5(password + salt);
         string client_password_hash = md5.toString();
-        
+
         if (db_password_hash == client_password_hash) {
             LOG_INFO << "username: " << username << " verify ok";
             ret = 0;

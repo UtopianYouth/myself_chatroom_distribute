@@ -284,7 +284,7 @@ function reducer(state: State, action: Action): State {
           ...state.rooms,
           [payload.roomId]: {
             ...room,
-            messages: [...room.messages, ...historicalMessages],
+            messages: [...historicalMessages, ...room.messages],  // 历史消息放在前面
             hasMoreMessages: payload.hasMoreMessages
           }
         }

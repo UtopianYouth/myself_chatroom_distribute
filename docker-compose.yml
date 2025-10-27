@@ -1,13 +1,14 @@
 services:
   zookeeper:
     image: bitnami/zookeeper:3.9.2
+    container_name: zookeeper
     environment:
       ALLOW_ANONYMOUS_LOGIN: "yes"
     ports:
       - "2181:2181"
 
     healthcheck:
-      test: ["CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/2181"]
+      test: [ "CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/2181" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -18,7 +19,7 @@ services:
     depends_on:
       zookeeper:
         condition: service_healthy
-
+    container_name: kafka
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
@@ -31,7 +32,7 @@ services:
       - "9092:9092"
 
     healthcheck:
-      test: ["CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/9092"]
+      test: [ "CMD", "bash", "-lc", "echo > /dev/tcp/127.0.0.1/9092" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -39,12 +40,13 @@ services:
 
   redis:
     image: redis:6.0.16
+    container_name: redis
     command: redis-server --appendonly yes
     ports:
       - "6379:6379"
 
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -52,6 +54,7 @@ services:
 
   mysql:
     image: mysql:8.0.37
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: 123
       MYSQL_DATABASE: myself_chatroom
@@ -60,7 +63,7 @@ services:
       - "3306:3306"
 
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p123 || exit 1"]
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p123 || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -70,16 +73,11 @@ services:
     image: mysql:8.0.37
     container_name: init-mysql
     volumes:
-      - ./server/create_tables.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./server/sql_scripts/create_tables.sql:/docker-entrypoint-initdb.d/init.sql:ro
     command: >
-      bash -c "
-      echo 'Waiting for MySQL to be ready...' &&
-      until mysql -h mysql -P 3306 -uroot -p123 -e 'SELECT 1' &> /dev/null; do
+      bash -c " echo 'Waiting for MySQL to be ready...' && until mysql -h mysql -P 3306 -uroot -p123 -e 'SELECT 1' &> /dev/null; do
         sleep 2
-      done &&
-      echo 'MySQL is ready, executing SQL script...' &&
-      mysql -h mysql -P 3306 -uroot -p123 myself_chatroom < /docker-entrypoint-initdb.d/init.sql &&
-      echo 'SQL script executed successfully'"
+      done && echo 'MySQL is ready, executing SQL script...' && mysql -h mysql -P 3306 -uroot -p123 myself_chatroom < /docker-entrypoint-initdb.d/init.sql && echo 'SQL script executed successfully'"
     depends_on:
       mysql:
         condition: service_healthy
@@ -88,7 +86,7 @@ services:
   init-kafka:
     image: bitnami/kafka:3.7
     container_name: init-kafka
-    command: ["bash", "-lc", "/opt/bitnami/kafka/bin/kafka-topics.sh --create --topic my_topic --bootstrap-server kafka:9092 --replication-factor 1 --partitions 3 || /opt/bitnami/kafka/bin/kafka-topics.sh --describe --topic my_topic --bootstrap-server kafka:9092 || true"]
+    command: [ "bash", "-lc", "/opt/bitnami/kafka/bin/kafka-topics.sh --create --topic my_topic --bootstrap-server kafka:9092 --replication-factor 1 --partitions 3 || /opt/bitnami/kafka/bin/kafka-topics.sh --describe --topic my_topic --bootstrap-server kafka:9092 || true" ]
     depends_on:
       kafka:
         condition: service_healthy

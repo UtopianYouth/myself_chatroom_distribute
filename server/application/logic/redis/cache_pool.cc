@@ -835,63 +835,90 @@ END:
 
 
 // 获取消息队列相关命令
-bool  CacheConn::GetXrevrange(const string& key,
-    const string start, const string end, int count, std::vector<std::pair<string, string>>& msgs) {
-    bool ret = false;
+bool CacheConn::GetXrevrange(const string& key, const string& start_id, const string& end_id,
+    int count, std::vector<std::pair<string, string>>& msgs) {
     if (Init()) {
         return false;
     }
 
-    // 构建 XREVRANGE 命令
-    string  command = "XREVRANGE " + key + " " + start + " " + end;
+    // redisCommandArgv 处理特殊字符
+    // XREVRANGE key <end-id> <start-id> [COUNT count]
+    std::vector<const char*> argv;
+    std::vector<size_t> argvlen;
+
+    string count_str;
+
+    argv.push_back("XREVRANGE");
+    argvlen.push_back(sizeof("XREVRANGE") - 1);
+
+    argv.push_back(key.c_str());
+    argvlen.push_back(key.length());
+
+    // XREVRANGE命令的参数顺序是(end, start), 与XRANGE相反
+    argv.push_back(start_id.c_str());
+    argvlen.push_back(start_id.length());
+
+    argv.push_back(end_id.c_str());
+    argvlen.push_back(end_id.length());
+
     if (count > 0) {
-        command += " COUNT " + std::to_string(count);
+        argv.push_back("COUNT");
+        argvlen.push_back(sizeof("COUNT") - 1);
+        count_str = std::to_string(count);
+        argv.push_back(count_str.c_str());
+        argvlen.push_back(count_str.length());
     }
 
-    //LOG_DEBUG << "command: " << command;
+    // 添加调试日志，打印完整的命令
+    LOG_INFO << "XREVRANGE command: key='" << key << "', start_id='" << start_id
+        << "', end_id='" << end_id << "', count=" << count;
 
-    // 发送命令
-    redisReply* reply = (redisReply*)redisCommand(context_, command.c_str());
+    // 执行命令
+    redisReply* reply = (redisReply*)redisCommandArgv(context_,
+        argv.size(), argv.data(), argvlen.data());
+
     if (!reply) {
-        std::cerr << "Failed to execute XREVRANGE command" << std::endl;
+        LOG_ERROR << "redisCommandArgv 在 key '" << key << "' 上执行 XREVRANGE 失败: "
+            << (context_->errstr ? context_->errstr : "未知错误");
+
+        // 仅当上下文指示连接错误时才断开连接
+        if (context_->err) {
+            redisFree(context_);
+            context_ = NULL;
+        }
         return false;
     }
 
-    // 检查回复类型
-    if (reply->type != REDIS_REPLY_ARRAY) {
-        std::cerr << "Unexpected reply type: " << reply->type
-                  << ", detail: " << (reply->str ? reply->str : "nil")
-                  << ", elements: " << reply->elements
-                  << std::endl;
+    // 检查来自Redis的应用级错误
+    if (reply->type == REDIS_REPLY_ERROR) {
+        LOG_ERROR << "XREVRANGE 命令在 key '" << key << "' 上失败，错误信息: " << (reply->str ? reply->str : "nil");
         freeReplyObject(reply);
         return false;
     }
 
-    // 解析回复
-    for (size_t i = 0; i < reply->elements; i++) {
-        redisReply* entry = reply->element[i];
-        if (entry->type == REDIS_REPLY_ARRAY && entry->elements >= 2) {
-            // 第一个元素是消息 ID
-            string  message_id = entry->element[0]->str;
+    // 检查意外的回复类型
+    if (reply->type != REDIS_REPLY_ARRAY) {
+        LOG_ERROR << "XREVRANGE 在 key '" << key << "' 上返回了意外的回复类型: " << reply->type;
+        freeReplyObject(reply);
+        return false;
+    }
 
-            // 第二个元素是消息内容
+    // 解析结果
+    for (size_t i = 0; i < reply->elements; ++i) {
+        redisReply* entry = reply->element[i];
+        if (entry->type == REDIS_REPLY_ARRAY && entry->elements == 2) {
+            string id = entry->element[0]->str;
             redisReply* fields = entry->element[1];
-            if (fields->type == REDIS_REPLY_ARRAY) {
-                string  message_content;
-                string  value;
-                for (size_t j = 0; j < fields->elements; j += 2) {
-                    string  field = fields->element[j]->str;
-                    value = fields->element[j + 1]->str;
-                    message_content += field + ": " + value + ", ";
-                }
-                //LOG_INFO << string("key: " + key + ", ID: " + message_id + ", Content: " + message_content);
-                msgs.push_back({ message_id, value });
+            // 假设 payload 始终是键值对中的第二个元素
+            if (fields->type == REDIS_REPLY_ARRAY && fields->elements >= 2) {
+                string payload = fields->element[1]->str;
+                msgs.push_back({ id, payload });
             }
         }
     }
 
-    // 释放回复对象
     freeReplyObject(reply);
+
     return true;
 }
 
@@ -901,49 +928,51 @@ bool CacheConn::Xadd(const string& key, string& id, const std::vector<std::pair<
     if (Init()) {
         return false;
     }
-    
+
     // 使用 redisCommandArgv 避免空格和特殊字符问题
     std::vector<const char*> argv;
     std::vector<size_t> argvlen;
-    
+
     // 添加命令和基本参数
     argv.push_back("XADD");
     argvlen.push_back(4);
-    
+
     argv.push_back(key.c_str());
     argvlen.push_back(key.length());
-    
+
     argv.push_back(id.c_str());
     argvlen.push_back(id.length());
-    
+
     // 添加字段-值对
     for (const auto& pair : field_value_pairs) {
         argv.push_back(pair.first.c_str());
         argvlen.push_back(pair.first.length());
-        
+
         argv.push_back(pair.second.c_str());
         argvlen.push_back(pair.second.length());
     }
-    
+
     LOG_DEBUG << "XADD command with " << argv.size() << " arguments";
-    
+
     // 发送命令
-    redisReply* reply = (redisReply*)redisCommandArgv(context_, argv.size(), &argv[0], &argvlen[0]);
+    redisReply* reply = (redisReply*)redisCommandArgv(context_, argv.size(), argv.data(), argvlen.data());
     if (!reply) {
-        std::cerr << "Failed to execute XADD command" << std::endl;
+        LOG_ERROR << "Failed to execute XADD command: " << context_->errstr;
+        redisFree(context_);
+        context_ = NULL;
         return false;
     }
 
     // 检查回复类型
     if (reply->type == REDIS_REPLY_ERROR) {
-        std::cerr << "Error: " << reply->str << std::endl;
+        LOG_ERROR << "Error executing XADD command: " << reply->str;
         freeReplyObject(reply);
         return false;
     }
 
     // 获取生成的 ID
     id = reply->str;
-    
+
     // 释放回复对象
     freeReplyObject(reply);
     return true;

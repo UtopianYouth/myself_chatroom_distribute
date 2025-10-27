@@ -50,3 +50,14 @@ CREATE TABLE IF NOT EXISTS message_infos (
     INDEX idx_message_id (msg_id),
     INDEX idx_user_id (user_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+DROP TABLE IF EXISTS authorized_users;
+
+CREATE TABLE IF NOT EXISTS authorized_users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_email (email)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

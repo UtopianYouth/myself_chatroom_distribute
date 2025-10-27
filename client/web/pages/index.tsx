@@ -12,7 +12,6 @@ import PasswordInput from "@/components/PasswordInput";
 import UsernameInput from "@/components/UsernameInput";
 import { useCallback } from "react";
 import FormCard from "@/components/FormCard";
-import { setHasAuth } from "@/lib/hasAuth";
 
 type Inputs = {
   username: string;
@@ -40,8 +39,8 @@ export default function HomePage() {
           const { type } = await createAccount(inputs);
           switch (type) {
             case "ok":
-              setHasAuth();
-              router.push("/chat");
+              // 注册成功后跳转到登录页面，并传递注册成功标识
+              router.push("/login?registered=true");
               return DontClearLoading;
             case ErrorId.EmailExists:
               setError("email", {

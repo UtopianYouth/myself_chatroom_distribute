@@ -15,7 +15,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # 本地源路径
 DEPLOY_DIR="$REPO_ROOT/deploy"
 NGINX_DIR="$REPO_ROOT/nginx"
-SQL_FILE="$REPO_ROOT/server/create_tables.sql"
+SQL_FILE="$REPO_ROOT/server/sql_scripts/create_tables.sql"
 ENV_FILE="$REPO_ROOT/deploy/.env"
 
 # 远端准备目录

@@ -94,12 +94,12 @@ class CacheConn {
     // 获取消息队列相关命令
     /**
      * key ：队列名
-        end ：结束值， + 表示最大值
+        end：结束值， + 表示最大值
         start ：开始值， - 表示最小值
         count ：数量
      */
-    bool  GetXrevrange(const string & key, 
-      const string start, const string end, int count, std::vector<std::pair<string, string>> &msgs);
+    bool  GetXrevrange(const string & key, const string& start_id, const string& end_id, 
+      int count, std::vector<std::pair<string, string>> &msgs);
     // / 添加消息到流
     bool Xadd(const string& key, string& id, const std::vector<std::pair<string, string>>& field_value_pairs);
     

@@ -15,7 +15,7 @@ echo "Namespace: $NS"
 echo "Version tag: $DATE_TAG"
 echo
 
-# 本地已构建的业务镜像名称（确保存在）
+# 本地已构建的业务镜像名称
 LOCAL_LOGIC="myself-chatroom-distribute-logic-app:latest"
 LOCAL_JOB="myself-chatroom-distribute-job-app:latest"
 LOCAL_CHATROOM="myself-chatroom-distribute-chatroom-app:latest"
