@@ -222,11 +222,28 @@ int CDBConn::Init() {
 
 const char *CDBConn::GetPoolName() { return db_pool_->GetPoolName(); }
 
+bool CDBConn::CheckAndReconnect() {
+    if (mysql_ping(mysql_) != 0) {
+        LOG_WARN << "mysql connection lost, reconnecting...";
+        mysql_close(mysql_);
+        mysql_ = NULL;
+        if (Init() != 0) {
+            LOG_ERROR << "reconnect failed";
+            return false;
+        }
+        LOG_INFO << "reconnect success";
+    }
+    return true;
+}
+
 bool CDBConn::ExecuteCreate(const char *sql_query) {
-    mysql_ping(mysql_);
+    if (!CheckAndReconnect()) {
+        return false;
+    }
+
     // mysql_real_query 实际就是执行了SQL
     if (mysql_real_query(mysql_, sql_query, strlen(sql_query))) {
-        LOG_ERROR << "mysql_real_query failed: " <<  mysql_error(mysql_); 
+        LOG_ERROR << "mysql_real_query failed: " <<  mysql_error(mysql_);
         return false;
     }
 
@@ -234,10 +251,13 @@ bool CDBConn::ExecuteCreate(const char *sql_query) {
 }
 
 bool CDBConn::ExecutePassQuery(const char *sql_query) {
-    mysql_ping(mysql_);
+    if (!CheckAndReconnect()) {
+        return false;
+    }
+
     // mysql_real_query 实际就是执行了SQL
     if (mysql_real_query(mysql_, sql_query, strlen(sql_query))) {
-        LOG_ERROR << "mysql_real_query failed: " <<  mysql_error(mysql_); 
+        LOG_ERROR << "mysql_real_query failed: " <<  mysql_error(mysql_);
         return false;
     }
 
@@ -245,10 +265,12 @@ bool CDBConn::ExecutePassQuery(const char *sql_query) {
 }
 
 bool CDBConn::ExecuteDrop(const char *sql_query) {
-    mysql_ping(mysql_); // 如果端开了，能够自动重连
+    if (!CheckAndReconnect()) {
+        return false;
+    }
 
     if (mysql_real_query(mysql_, sql_query, strlen(sql_query))) {
-        LOG_ERROR << "mysql_real_query failed: " <<  mysql_error(mysql_); 
+        LOG_ERROR << "mysql_real_query failed: " <<  mysql_error(mysql_);
         return false;
     }
 
@@ -256,7 +278,10 @@ bool CDBConn::ExecuteDrop(const char *sql_query) {
 }
 
 CResultSet *CDBConn::ExecuteQuery(const char *sql_query) {
-    mysql_ping(mysql_);
+    if (!CheckAndReconnect()) {
+        return NULL;
+    }
+
     row_num = 0;
     if (mysql_real_query(mysql_, sql_query, strlen(sql_query))) {
         LOG_ERROR << "mysql_real_query failed: " << mysql_error(mysql_) << ", sql:" << sql_query;
@@ -286,7 +311,9 @@ id=1; id=1该条记录原值就是10的话,则返回0。
 mysql_affected_rows返回的是实际更新的行数,而不是匹配到的行数。
 */
 bool CDBConn::ExecuteUpdate(const char *sql_query, bool care_affected_rows) {
-    mysql_ping(mysql_);
+    if (!CheckAndReconnect()) {
+        return false;
+    }
 
     if (mysql_real_query(mysql_, sql_query, strlen(sql_query))) {
         LOG_ERROR << "mysql_real_query failed: " << mysql_error(mysql_) << ", sql:" << sql_query;
@@ -296,7 +323,7 @@ bool CDBConn::ExecuteUpdate(const char *sql_query, bool care_affected_rows) {
     if (mysql_affected_rows(mysql_) > 0) {
         return true;
     } else {                      // 影响的行数为0时
-        if (care_affected_rows) { // 如果在意影响的行数时, 返回false,否则返回true            
+        if (care_affected_rows) { // 如果在意影响的行数时, 返回false,否则返回true
             LOG_ERROR << "mysql_real_query failed: " << mysql_error(mysql_) << ", sql:" << sql_query;
             return false;
         } else {
@@ -307,7 +334,9 @@ bool CDBConn::ExecuteUpdate(const char *sql_query, bool care_affected_rows) {
 }
 
 bool CDBConn::StartTransaction() {
-    mysql_ping(mysql_);
+    if (!CheckAndReconnect()) {
+        return false;
+    }
 
     if (mysql_real_query(mysql_, "start transaction\n", 17)) {
         LOG_ERROR << "mysql_real_query failed: " << mysql_error(mysql_) << " start transaction failed";
@@ -318,7 +347,9 @@ bool CDBConn::StartTransaction() {
 }
 
 bool CDBConn::Rollback() {
-    mysql_ping(mysql_);
+    if (!CheckAndReconnect()) {
+        return false;
+    }
 
     if (mysql_real_query(mysql_, "rollback\n", 8)) {
         LOG_ERROR << "mysql_real_query failed: " << mysql_error(mysql_) << ", sql: rollback";
@@ -329,7 +360,9 @@ bool CDBConn::Rollback() {
 }
 
 bool CDBConn::Commit() {
-    mysql_ping(mysql_);
+    if (!CheckAndReconnect()) {
+        return false;
+    }
 
     if (mysql_real_query(mysql_, "commit\n", 6)) {
         LOG_ERROR << "mysql_real_query failed: " << mysql_error(mysql_) << ", sql: commit";
